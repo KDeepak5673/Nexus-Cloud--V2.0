@@ -13,7 +13,7 @@ function DocsPage() {
 
                 {/* Table of Contents */}
                 <div className="toc-section">
-                    <h2>📋 Table of Contents</h2>
+                    <h2> Table of Contents</h2>
                     <ul className="toc-list">
                         <li><a href="#getting-started">Getting Started</a></li>
                         <li><a href="#creating-project">Creating Your First Project</a></li>
@@ -28,7 +28,7 @@ function DocsPage() {
 
                 {/* Getting Started */}
                 <section id="getting-started" className="docs-section">
-                    <h2>🚀 Getting Started</h2>
+                    <h2> Getting Started</h2>
                     <p>Welcome to Nexus Cloud! Our platform allows you to deploy your GitHub repositories with automatic subdomain generation and live project URLs.</p>
 
                     <h3>What You Can Do:</h3>
@@ -67,7 +67,7 @@ function DocsPage() {
                         </li>
                         <li>
                             <strong>Deploy</strong>
-                            <p>Click <strong>"🚀 Deploy Project"</strong> to start the deployment process.</p>
+                            <p>Click <strong>" Deploy Project"</strong> to start the deployment process.</p>
                         </li>
                         <li>
                             <strong>Monitor Progress</strong>
@@ -82,7 +82,7 @@ function DocsPage() {
 
                 {/* Dashboard */}
                 <section id="dashboard" className="docs-section">
-                    <h2>📊 Dashboard Overview</h2>
+                    <h2> Dashboard Overview</h2>
                     <p>Your dashboard is the central hub for managing all your projects and deployments.</p>
 
                     <h3>Dashboard Features:</h3>
@@ -105,7 +105,7 @@ function DocsPage() {
 
                 {/* Project Management */}
                 <section id="project-management" className="docs-section">
-                    <h2>🔧 Project Management</h2>
+                    <h2> Project Management</h2>
 
                     <h3>Project Cards</h3>
                     <p>Each project is displayed as a card showing:</p>

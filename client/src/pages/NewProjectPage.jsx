@@ -50,19 +50,19 @@ function NewProjectPage() {
         setLogs(prev => [...prev, `✅ Project created successfully `])
 
         // Start deploy automatically
-        setLogs(prev => [...prev, `📦 Initiating deployment...`])
+        setLogs(prev => [...prev, `Initiating deployment...`])
         const deployRes = await api.deployProject({ projectId })
 
         if (deployRes && deployRes.status === 'queued') {
           const deployId = deployRes.data.deploymentId
           setDeploymentStatus('Building...')
-          setLogs(prev => [...prev, `⏳ Deployment queued with ID: ${deployId}`])
+          setLogs(prev => [...prev, `Deployment queued with ID: ${deployId}`])
 
           // Generate deployment URL (this would typically come from your API)
           const subdomain = sanitizeSubdomain(name)
           const generatedUrl = getProjectUrl(subdomain)
           setDeploymentUrl(generatedUrl)
-          setLogs(prev => [...prev, `🌐 Deployment URL: ${generatedUrl}`])          // Start polling logs
+          setLogs(prev => [...prev, `Deployment URL: ${generatedUrl}`])          // Start polling logs
           let attempts = 0
           const maxAttempts = 150 // ~5 minutes
           const interval = setInterval(async () => {
@@ -80,15 +80,15 @@ function NewProjectPage() {
                 const joined = logsRes.logs.map(l => l.log).join('\n')
                 if (/BUILD_FINISHED|DEPLOYMENT_COMPLETE/i.test(joined)) {
                   setDeploymentStatus('Deployed Successfully')
-                  setLogs(prev => [...prev, `🎉 Deployment completed successfully!`])
+                  setLogs(prev => [...prev, `Deployment completed successfully!`])
                   clearInterval(interval)
                 } else if (/ERROR|FAILED/i.test(joined)) {
                   setDeploymentStatus('Deployment Failed')
-                  setLogs(prev => [...prev, `❌ Deployment failed. Check logs for details.`])
+                  setLogs(prev => [...prev, `Deployment failed. Check logs for details.`])
                   clearInterval(interval)
                 } else if (attempts >= maxAttempts) {
                   setDeploymentStatus('Timeout')
-                  setLogs(prev => [...prev, `⏰ Deployment timeout reached.`])
+                  setLogs(prev => [...prev, `Deployment timeout reached.`])
                   clearInterval(interval)
                 }
               }
@@ -98,15 +98,15 @@ function NewProjectPage() {
           }, 2000)
         } else {
           setError('Failed to queue deployment')
-          setLogs(prev => [...prev, `❌ Failed to queue deployment`])
+          setLogs(prev => [...prev, `Failed to queue deployment`])
         }
       } else {
         setError((res && res.error) || 'Failed to create project')
-        setLogs(prev => [...prev, `❌ Failed to create project: ${(res && res.error) || 'Unknown error'}`])
+        setLogs(prev => [...prev, `Failed to create project: ${(res && res.error) || 'Unknown error'}`])
       }
     } catch (err) {
       setError(err.message || 'Network error')
-      setLogs(prev => [...prev, `❌ Network error: ${err.message || 'Unknown error'}`])
+      setLogs(prev => [...prev, `Network error: ${err.message || 'Unknown error'}`])
     } finally {
       setLoading(false)
     }
@@ -182,7 +182,7 @@ function NewProjectPage() {
 
             {error && (
               <div className="error-message">
-                <span className="error-icon">⚠️</span>
+                
                 {error}
               </div>
             )}
@@ -194,12 +194,12 @@ function NewProjectPage() {
             >
               {loading ? (
                 <>
-                  <span className="loading-spinner"></span>
+                  
                   Deploying...
                 </>
               ) : (
                 <>
-                  <span>🚀</span>
+                  
                   Deploy Project
                 </>
               )}
@@ -211,7 +211,7 @@ function NewProjectPage() {
         {deploymentUrl && (
           <div className="deployment-url-card">
             <div className="card-header">
-              <h3>🌐 Deployment URL</h3>
+              <h3>Deployment URL</h3>
               <div className={`status-badge ${deploymentStatus.toLowerCase().replace(/\s+/g, '-')}`}>
                 {deploymentStatus || 'Building...'}
               </div>
@@ -232,7 +232,7 @@ function NewProjectPage() {
                 onClick={() => copyToClipboard(deploymentUrl)}
                 title="Copy URL"
               >
-                📋
+                
               </button>
             </div>
             <div className="url-hint">
@@ -245,7 +245,7 @@ function NewProjectPage() {
         {logs.length > 0 && (
           <div className="deployment-logs-card">
             <div className="card-header">
-              <h3>📋 Deployment Logs</h3>
+              <h3>Deployment Logs</h3>
               <div className="logs-info">
                 <span className="log-count">{logs.length} entries</span>
                 <button

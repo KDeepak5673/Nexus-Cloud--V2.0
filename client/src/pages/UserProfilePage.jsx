@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { getUserProfile } from '../lib/api.js'
-import { getProjectUrl } from '../lib/utils.js'
+import { COLORS } from '../constants/design'
+import { ThemeContext } from '../App.jsx'
 
 function UserProfilePage() {
     const { user, logout } = useAuth()
+    const { theme, setTheme } = useContext(ThemeContext)
     const [profileData, setProfileData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [activeTab, setActiveTab] = useState('account')
+    const [formData, setFormData] = useState({})
+    const [selectedTheme, setSelectedTheme] = useState(theme)
 
     useEffect(() => {
         if (user?.uid) {
@@ -20,12 +25,15 @@ function UserProfilePage() {
             setLoading(true)
             setError('')
 
-            console.log('Fetching user profile for:', user.uid)
             const response = await getUserProfile(user.uid)
 
             if (response.status === 'success') {
                 setProfileData(response.data.user)
-                console.log('User profile data:', response.data.user)
+                setFormData({
+                    name: user.displayName || '',
+                    email: user.email || '',
+                    photoURL: user.photoURL || ''
+                })
             } else {
                 setError('Failed to load profile data')
             }
@@ -37,333 +45,317 @@ function UserProfilePage() {
         }
     }
 
-    const getTimeAgo = (dateString) => {
-        const date = new Date(dateString)
-        const now = new Date()
-        const diffInMinutes = Math.floor((now - date) / (1000 * 60))
-
-        if (diffInMinutes < 1) return 'Just now'
-        if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-
-        const diffInHours = Math.floor(diffInMinutes / 60)
-        if (diffInHours < 24) return `${diffInHours}h ago`
-
-        const diffInDays = Math.floor(diffInHours / 24)
-        return `${diffInDays}d ago`
+    const handleInputChange = (e) => {
+        const { name, value } = e.target
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }))
     }
 
-    const getMemberSince = (dateString) => {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long'
-        })
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault()
+        // API call would go here
+        console.log('Updating profile:', formData)
     }
 
-    if (!user) {
-        return (
-            <div className="container" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-                <h1>Please log in to view your profile</h1>
-                <button className="btn btn-primary" onClick={() => window.appState.setPage('login')}>
-                    Go to Login
-                </button>
-            </div>
-        )
+    const handleChangePassword = () => {
+        // Implementation for password change
+        console.log('Change password')
     }
 
     if (loading) {
         return (
-            <div className="user-profile-page">
-                <div className="container">
-                    <div className="loading-spinner-large">
-                        <div className="spinner"></div>
-                        <p>Loading your profile...</p>
-                    </div>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-screen" style={{ background: 'var(--bg-root)' }}>
+                <div className="w-12 h-12 rounded-full animate-spin border-4" style={{ borderColor: 'var(--accent-hover)', borderTopColor: 'var(--accent-primary)' }}></div>
+                <p className="mt-4" style={{ color: 'var(--text-muted)' }}>Loading profile...</p>
             </div>
         )
     }
-
-    if (error) {
-        return (
-            <div className="user-profile-page">
-                <div className="container">
-                    <div className="error-container">
-                        <h2>Error Loading Profile</h2>
-                        <p>{error}</p>
-                        <button
-                            className="btn btn-primary"
-                            onClick={fetchUserProfile}
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    // Calculate stats from real data
-    const userStats = {
-        totalProjects: profileData?.projects?.length || 0,
-        activeProjects: profileData?.projects?.filter(p =>
-            p.Deployement?.[0]?.status === 'READY'
-        ).length || 0,
-        totalDeployments: profileData?.projects?.reduce((sum, p) =>
-            sum + (p.Deployement?.length || 0), 0
-        ) || 0,
-        memberSince: profileData?.createdAt ? getMemberSince(profileData.createdAt) : 'Unknown'
-    }
-
-    // Transform projects data
-    const userProjects = profileData?.projects?.map(project => {
-        const latestDeployment = project.Deployement?.[0]
-        const getProjectStatus = (deploymentStatus) => {
-            switch (deploymentStatus) {
-                case 'READY': return 'Active'
-                case 'IN_PROGRESS': return 'Deploying'
-                case 'QUEUED': return 'Queued'
-                case 'FAIL': return 'Failed'
-                case 'NOT_STARTED': return 'Not Started'
-                default: return 'Inactive'
-            }
-        }
-
-        return {
-            id: project.id,
-            name: project.name,
-            status: getProjectStatus(latestDeployment?.status),
-            rawStatus: latestDeployment?.status || 'NOT_STARTED',
-            deployments: project.Deployement?.length || 0,
-            lastDeployed: latestDeployment ? getTimeAgo(latestDeployment.createdAt) : 'Never',
-            url: getProjectUrl(project.subDomain)
-        }
-    }) || []
 
     return (
-        <div className="user-profile-page">
-            <div className="container">
-                {/* Profile Header */}
-                <div className="profile-header">
-                    <div className="profile-info">
-                        <div className="profile-avatar">
-                            {user.photoURL ? (
-                                <img src={user.photoURL} alt="Profile" className="avatar-image" />
-                            ) : (
-                                <div className="avatar-placeholder">
-                                    {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                        </div>
-                        <div className="profile-details">
-                            <h1>{user.displayName || 'User'}</h1>
-                            <p className="profile-email">{user.email}</p>
-                            <p className="profile-member">Member since {userStats.memberSince}</p>
-                        </div>
-                    </div>
-                    <div className="profile-actions">
-                        <button className="btn btn-outline" onClick={logout}>Logout</button>
-                    </div>
+        <div style={{ background: 'var(--bg-root)' }} className="min-h-screen">
+            {/* Header */}
+            <section className="border-b shadow-soft" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+                <div className="max-w-6xl mx-auto px-6 py-8">
+                    <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Account Settings</h1>
+                    <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Manage your profile and preferences</p>
                 </div>
+            </section>
 
-                {/* User Stats */}
-                <div className="profile-stats">
-                    <div className="stat-card">
-                        <h3>{userStats.totalProjects}</h3>
-                        <p>Total Projects</p>
-                    </div>
-                    <div className="stat-card">
-                        <h3>{userStats.activeProjects}</h3>
-                        <p>Active Projects</p>
-                    </div>
-                    <div className="stat-card">
-                        <h3>{userStats.totalDeployments}</h3>
-                        <p>Total Deployments</p>
-                    </div>
-                </div>
-
-                {/* Projects Section */}
-                <div className="profile-projects">
-                    <div className="section-header">
-                        <h2>Your Projects</h2>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => window.appState.setPage('new-project')}
-                        >
-                            New Project
-                        </button>
-                    </div>
-
-                    <div className="projects-list">
-                        {userProjects.length > 0 ? (
-                            userProjects.map(project => (
-                                <div key={project.id} className="project-item">
-                                    <div className="project-main">
-                                        <div className="project-info">
-                                            <h3
-                                                onClick={() => window.appState.setPage('projectDetails', { projectId: project.id })}
-                                                style={{ cursor: 'pointer', color: '#4A90E2' }}
-                                            >
-                                                {project.name}
-                                            </h3>
-                                            <div className="project-meta">
-                                                <span className={`status-badge status-${project.status.toLowerCase()}`}>
-                                                    {project.status}
-                                                </span>
-                                                <span>{project.deployments} deployments</span>
-                                                <span>Last deployed {project.lastDeployed}</span>
-                                            </div>
-                                        </div>
-                                        <div className="project-actions">
-                                            <a href={project.url} target="_blank" rel="noopener noreferrer" className="btn btn-outline">
-                                                Visit Site
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="no-projects">
-                                <p>No projects yet. Create your first project to get started!</p>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => window.appState.setPage('new-project')}
-                                >
-                                    Create First Project
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="profile-activity">
-                    <h2>Recent Activity</h2>
-                    <div className="activity-list">
-                        {profileData?.projects?.length > 0 ? (
-                            profileData.projects
-                                .filter(project => project.Deployement?.length > 0)
-                                .slice(0, 5)
-                                .map((project, index) => {
-                                    const latestDeployment = project.Deployement[0]
-                                    const getActivityIcon = (status) => {
-                                        switch (status) {
-                                            case 'READY': return '🚀'
-                                            case 'IN_PROGRESS': return '⏳'
-                                            case 'QUEUED': return '🔄'
-                                            case 'FAIL': return '❌'
-                                            default: return '🔧'
-                                        }
-                                    }
-
-                                    const getActivityText = (status) => {
-                                        switch (status) {
-                                            case 'READY': return 'deployed successfully'
-                                            case 'IN_PROGRESS': return 'deployment in progress'
-                                            case 'QUEUED': return 'deployment queued'
-                                            case 'FAIL': return 'deployment failed'
-                                            default: return 'status updated'
-                                        }
-                                    }
-
-                                    return (
-                                        <div key={project.id} className="activity-item">
-                                            <div className="activity-icon">{getActivityIcon(latestDeployment.status)}</div>
-                                            <div className="activity-content">
-                                                <p><strong>{project.name}</strong> {getActivityText(latestDeployment.status)}</p>
-                                                <span className="activity-time">{getTimeAgo(latestDeployment.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                    )
-                                })
-                        ) : (
-                            <div className="no-activity">
-                                <p>No recent activity. Create your first project to get started!</p>
-                            </div>
-                        )}
-                    </div>
+            {/* Tabs */}
+            <div className="max-w-6xl mx-auto px-6 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                <div className="flex gap-8">
+                    <button
+                        onClick={() => setActiveTab('account')}
+                        className={`px-4 py-4 border-b-2 font-medium transition-colors ${activeTab === 'account' ? '' : ''}`}
+                        style={{
+                            borderBottom: activeTab === 'account' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                            color: activeTab === 'account' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                        }}
+                    >
+                        Account
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('security')}
+                        className={`px-4 py-4 border-b-2 font-medium transition-colors ${activeTab === 'security' ? '' : ''}`}
+                        style={{
+                            borderBottom: activeTab === 'security' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                            color: activeTab === 'security' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                        }}
+                    >
+                        Security
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`px-4 py-4 border-b-2 font-medium transition-colors ${activeTab === 'settings' ? '' : ''}`}
+                        style={{
+                            borderBottom: activeTab === 'settings' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                            color: activeTab === 'settings' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                        }}
+                    >
+                        Settings
+                    </button>
                 </div>
             </div>
 
-            <style jsx>{`
-                .loading-spinner-large {
-                    text-align: center;
-                    padding: 4rem 2rem;
-                }
+            {/* Content */}
+            <section className="max-w-6xl mx-auto px-6 py-12">
+                {/* Account Tab */}
+                {activeTab === 'account' && (
+                    <div className="max-w-2xl">
+                        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Profile Information</h2>
+                        <p className="mb-8" style={{ color: 'var(--text-muted)' }}>Update your personal details</p>
 
-                .spinner {
-                    width: 60px;
-                    height: 60px;
-                    border: 4px solid #e2e8f0;
-                    border-top: 4px solid #4A90E2;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin: 0 auto 1.5rem;
-                }
+                        <form onSubmit={handleUpdateProfile} className="space-y-6">
+                            {/* Avatar */}
+                            <div>
+                                <label className="block text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Profile Picture</label>
+                                <div className="flex items-center gap-6">
+                                    <div
+                                        className="w-24 h-24 rounded-lg border-2 flex items-center justify-center text-3xl"
+                                        style={{ borderColor: 'var(--accent-hover)', background: 'var(--accent-hover)' }}
+                                    >
+                                        {user?.photoURL ? (
+                                            <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-lg" />
+                                        ) : null}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>JPG, PNG or GIF (max 5MB)</p>
+                                        <button
+                                            type="button"
+                                            className="px-4 py-2 rounded-md border transition-colors text-sm font-medium"
+                                            style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)', background: 'transparent' }}
+                                        >
+                                            Upload New Photo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                .error-container {
-                    text-align: center;
-                    padding: 4rem 2rem;
-                }
+                            {/* Name */}
+                            <div>
+                                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Full Name</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 rounded-md border"
+                                    style={{ borderColor: 'var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
 
-                .no-activity {
-                    text-align: center;
-                    padding: 2rem;
-                    color: #64748b;
-                }
+                            {/* Email */}
+                            <div>
+                                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Email Address</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    disabled
+                                    className="w-full px-4 py-2 rounded-md border"
+                                    style={{ borderColor: 'var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                                />
+                                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Email cannot be changed</p>
+                            </div>
 
-                .no-projects {
-                    text-align: center;
-                    padding: 3rem 2rem;
-                    background: #f8fafc;
-                    border-radius: 12px;
-                    border: 2px dashed #cbd5e1;
-                }
+                            {/* Joined Date */}
+                            <div>
+                                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Member Since</label>
+                                <input
+                                    type="text"
+                                    value={user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'N/A'}
+                                    disabled
+                                    className="w-full px-4 py-2 rounded-md border"
+                                    style={{ borderColor: 'var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
 
-                .no-projects p {
-                    color: #64748b;
-                    margin-bottom: 1.5rem;
-                    font-size: 1.1rem;
-                }
+                            <div className="pt-4">
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 rounded-md font-medium transition-all"
+                                    style={{ background: 'var(--button-bg)', color: 'var(--button-text)' }}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
 
-                .status-badge {
-                    padding: 0.25rem 0.75rem;
-                    border-radius: 12px;
-                    font-size: 0.75rem;
-                    font-weight: 500;
-                }
+                {/* Security Tab */}
+                {activeTab === 'security' && (
+                    <div className="max-w-2xl space-y-8">
+                        {/* Password Section */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-charcoal mb-2">Password</h2>
+                            <p className="text-text-muted mb-6">Update your password to keep your account secure</p>
 
-                .status-active {
-                    background: #d1fae5;
-                    color: #059669;
-                }
+                            <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-semibold text-charcoal mb-1">Password</h3>
+                                        <p className="text-sm text-text-muted">Last changed 2 months ago</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleChangePassword}
+                                        className="px-4 py-2 rounded-md border text-sage border-sage hover:bg-beige-light transition-colors text-sm font-medium"
+                                    >
+                                        Change Password
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                .status-deploying {
-                    background: #fef3c7;
-                    color: #d97706;
-                }
+                        {/* Two-Factor Authentication */}
+                        <div>
+                            <h3 className="text-lg font-bold text-charcoal mb-4">Two-Factor Authentication</h3>
+                            <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-semibold text-charcoal mb-1">Authenticator App</h4>
+                                        <p className="text-sm text-text-muted">Use an authenticator app for extra security</p>
+                                    </div>
+                                    <button
+                                        className="px-4 py-2 rounded-md border text-sage border-sage hover:bg-beige-light transition-colors text-sm font-medium"
+                                    >
+                                        Set Up
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                .status-queued {
-                    background: #e0e7ff;
-                    color: #3730a3;
-                }
+                        {/* Active Sessions */}
+                        <div>
+                            <h3 className="text-lg font-bold text-charcoal mb-4">Active Sessions</h3>
+                            <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-semibold text-charcoal mb-1">Current Device</h4>
+                                        <p className="text-sm text-text-muted">Last active: Just now</p>
+                                    </div>
+                                    <span className="text-xs px-2 py-1 rounded-full text-sage" style={{ background: COLORS.BEIGE }}>Current</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                .status-failed {
-                    background: #fee2e2;
-                    color: #dc2626;
-                }
+                {/* Settings Tab */}
+                {activeTab === 'settings' && (
+                    <div className="max-w-2xl space-y-8">
+                        {/* Notification Settings */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-charcoal mb-6">Preferences</h2>
 
-                .status-inactive,
-                .status-not.started {
-                    background: #f3f4f6;
-                    color: #6b7280;
-                }
+                            <h3 className="text-lg font-semibold text-charcoal mb-4">Notifications</h3>
+                            <div className="space-y-4">
+                                <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6 flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-semibold text-charcoal">Email Notifications</h4>
+                                        <p className="text-sm text-text-muted">Get notified about deployment updates</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                                        <div
+                                            className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 rounded-full peer"
+                                            style={{ '--tw-ring-color': COLORS.SAGE }}
+                                        >
+                                            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-all peer-checked:left-5.5" style={{ background: COLORS.SAGE }}></div>
+                                        </div>
+                                    </label>
+                                </div>
 
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
+                                <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6 flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-semibold text-charcoal">Deployment Alerts</h4>
+                                        <p className="text-sm text-text-muted">Alerts for failed or critical deployments</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 rounded-full peer">
+                                            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-all peer-checked:left-5.5" style={{ background: COLORS.SAGE }}></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Display Settings */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-charcoal mb-4">Display</h3>
+                            <div className="bg-white rounded-lg shadow-soft border border-beige-light p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-semibold text-charcoal">Theme</h4>
+                                        <p className="text-sm text-text-muted">Choose your preferred theme</p>
+                                    </div>
+                                    <select
+                                        className="px-4 py-2 rounded-md border"
+                                        style={{ borderColor: COLORS.CHARCOAL_LIGHT + '4d' }}
+                                        value={selectedTheme}
+                                        onChange={(e) => {
+                                            setSelectedTheme(e.target.value)
+                                            setTheme(e.target.value)
+                                        }}
+                                    >
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Danger Zone */}
+                        <div>
+                            <h3 className="text-lg font-bold text-red-600 mb-4">Danger Zone</h3>
+                            <div className="bg-red-50 rounded-lg border border-red-200 p-6">
+                                <h4 className="font-semibold text-red-700 mb-2">Logout from All Devices</h4>
+                                <p className="text-sm text-red-600 mb-4">Sign out from all active sessions</p>
+                                <button
+                                    className="px-4 py-2 rounded-md border border-red-600 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
+                                >
+                                    Logout All Sessions
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-red-50 rounded-lg border border-red-200 p-6">
+                            <h4 className="font-semibold text-red-700 mb-2">Delete Account</h4>
+                            <p className="text-sm text-red-600 mb-4">Permanently delete your account and all data</p>
+                            <button
+                                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors text-sm font-medium"
+                                onClick={logout}
+                            >
+                                Delete Account
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </section>
         </div>
     )
 }
