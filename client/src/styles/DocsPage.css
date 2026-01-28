@@ -1,0 +1,287 @@
+/* Documentation Page Professional Styles */
+
+.docs-container {
+    background: linear-gradient(135deg, #fafbfc 0%, #f4f6f9 100%);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.docs-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 3px solid #e1e8ed;
+}
+
+.docs-header h1 {
+    font-size: 2.75rem;
+    color: #1a365d;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.docs-header p {
+    font-size: 1.25rem;
+    color: #4a5568;
+    max-width: 650px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.toc-section {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    margin-bottom: 3rem;
+    border: 1px solid #e1e8ed;
+}
+
+.toc-section h2 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.toc-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    list-style: none;
+    padding: 0;
+}
+
+.toc-list li a {
+    color: #3182ce;
+    text-decoration: none;
+    padding: 0.75rem 1rem;
+    display: block;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    font-weight: 500;
+}
+
+.toc-list li a:hover {
+    background: linear-gradient(145deg, #ebf8ff 0%, #bee3f8 100%);
+    color: #2c5282;
+    border-color: #90cdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.docs-section {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    padding: 3rem;
+    margin-bottom: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e1e8ed;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.docs-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.docs-section h2 {
+    color: #2d3748;
+    font-size: 1.875rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    border-bottom: 3px solid #e1e8ed;
+    padding-bottom: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.docs-section h3 {
+    color: #2d3748;
+    font-size: 1.375rem;
+    margin: 2rem 0 1rem 0;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.docs-section h4 {
+    color: #3182ce;
+    font-size: 1.125rem;
+    margin: 1.5rem 0 0.75rem 0;
+    font-weight: 600;
+}
+
+.docs-section p {
+    color: #2d3748;
+    line-height: 1.7;
+    margin-bottom: 1.25rem;
+    font-size: 1rem;
+}
+
+.docs-section ul,
+.docs-section ol {
+    margin: 1.5rem 0;
+    padding-left: 1.75rem;
+}
+
+.docs-section li {
+    color: #4a5568;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.docs-section strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.numbered-steps {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+    margin: 2rem 0;
+}
+
+.numbered-steps li {
+    counter-increment: step-counter;
+    margin-bottom: 2rem;
+    padding-left: 3.5rem;
+    position: relative;
+}
+
+.numbered-steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+    color: white;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+}
+
+.tip-box {
+    background: linear-gradient(145deg, #f0f9ff 0%, #dbeafe 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+}
+
+.tip-box strong {
+    color: #1e3a8a;
+}
+
+.troubleshoot-item {
+    background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fbbf24;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    border-left: 4px solid #f59e0b;
+}
+
+.troubleshoot-item h4 {
+    color: #92400e;
+    margin-top: 0;
+    font-weight: 600;
+}
+
+.troubleshoot-item ul li {
+    color: #78350f;
+}
+
+code {
+    background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    color: #3182ce;
+    font-weight: 500;
+    border: 1px solid #cbd5e0;
+    font-size: 0.9em;
+}
+
+.status-ready {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.status-progress {
+    color: #ea580c;
+    font-weight: 600;
+}
+
+.status-queued {
+    color: #7c3aed;
+    font-weight: 600;
+}
+
+.status-failed {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.status-not-started {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .docs-section {
+        padding: 2rem;
+    }
+
+    .docs-header h1 {
+        font-size: 2.25rem;
+    }
+
+    .docs-header p {
+        font-size: 1.125rem;
+    }
+
+    .toc-section {
+        padding: 2rem;
+    }
+
+    .toc-list {
+        grid-template-columns: 1fr;
+    }
+
+    .numbered-steps li {
+        padding-left: 3rem;
+    }
+
+    .numbered-steps li::before {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .docs-section {
+        padding: 1.5rem;
+    }
+
+    .toc-section {
+        padding: 1.5rem;
+    }
+
+    .docs-header h1 {
+        font-size: 2rem;
+    }
+}
