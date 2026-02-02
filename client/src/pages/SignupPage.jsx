@@ -54,21 +54,21 @@ function SignupPage() {
             <p>Connect your GitHub repository and deploy to production in seconds. Experience enterprise-grade deployment infrastructure with real-time monitoring and comprehensive analytics.</p>
             <div className="feature-list">
               <div className="feature-item">
-                <span className="feature-icon">🚀</span>
+                <span className="feature-icon"></span>
                 <div className="feature-content">
                   <strong>Instant Deployments</strong>
                   <span>Deploy from Git in under 30 seconds with zero configuration</span>
                 </div>
               </div>
               <div className="feature-item">
-                <span className="feature-icon">📊</span>
+                <span className="feature-icon"></span>
                 <div className="feature-content">
                   <strong>Real-time Analytics</strong>
                   <span>Monitor performance, traffic, and user behavior with live dashboards</span>
                 </div>
               </div>
               <div className="feature-item">
-                <span className="feature-icon">⚡</span>
+                <span className="feature-icon"></span>
                 <div className="feature-content">
                   <strong>Auto-scaling</strong>
                   <span>Handle traffic spikes automatically with intelligent scaling</span>

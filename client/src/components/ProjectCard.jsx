@@ -1,26 +1,24 @@
 import { getProjectUrl, getProjectDisplayUrl, isProjectLive } from '../lib/utils.js';
+import { COLORS } from '../constants/design'
 
 function ProjectCard({ id, title, environment, lastDeployed, subDomain, deploymentStatus }) {
     const handleCardClick = () => {
-        // Navigate to project details page
         window.appState.setPage('projectDetails', { projectId: id });
     };
 
     const handleViewLogs = (e) => {
-        e.stopPropagation(); // Prevent card click when clicking the button
-        // Navigate to project details page
+        e.stopPropagation();
         window.appState.setPage('projectDetails', { projectId: id });
     };
 
     const handleRetryDeployment = async (e) => {
-        e.stopPropagation(); // Prevent card click when clicking the button
+        e.stopPropagation();
 
         if (deploymentStatus !== 'FAIL') {
             return;
         }
 
         try {
-            // Get current user token
             const user = window.appState.user;
             if (!user) {
                 alert('Please log in to retry deployment');
@@ -37,9 +35,8 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
             });
 
             if (response.ok) {
-                // Show success message
                 alert('Deployment started! The page will refresh to show the new status.');
-                window.location.reload(); // Refresh to show new deployment
+                window.location.reload();
             } else {
                 const errorData = await response.json();
                 alert(`Failed to retry deployment: ${errorData.error || 'Unknown error'}`);
@@ -52,13 +49,13 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
     const getStatusColor = (status) => {
         const statusColors = {
-            'READY': '#22c55e',
-            'IN_PROGRESS': '#f59e0b',
-            'QUEUED': '#6366f1',
-            'FAIL': '#ef4444',
-            'NOT_STARTED': '#9ca3af'
+            'READY': 'var(--accent-primary, #266150)',
+            'IN_PROGRESS': 'var(--accent-hover, #DDAF94)',
+            'QUEUED': 'var(--accent-hover, #e8c4b0)',
+            'FAIL': '#a86b4f',
+            'NOT_STARTED': 'var(--text-muted, #6b6562)'
         }
-        return statusColors[status] || '#6b7280'
+        return statusColors[status] || 'var(--text-muted, #6b6562)'
     };
 
     const getStatusLabel = (status) => {
@@ -83,7 +80,6 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
         return descriptions[status] || 'Unknown status'
     };
 
-    // Determine if project is accessible (only if status is READY)
     const isLive = isProjectLive(deploymentStatus);
     const isFailed = deploymentStatus === 'FAIL';
     const isDeploying = deploymentStatus === 'IN_PROGRESS';
@@ -92,49 +88,61 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
     const displayUrl = getProjectDisplayUrl(subDomain);
 
     return (
-        <div className="project-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
-            <div className="project-header">
-                <h3>{title}</h3>
+                <div className="rounded-lg shadow-soft border p-6 hover:shadow-md transition-shadow cursor-pointer"
+                    style={{ background: 'var(--bg-surface, #fff)', borderColor: 'var(--border-subtle, #e8c4b0)' }}
+                    onClick={handleCardClick}>
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <h3 className="text-lg font-semibold text-charcoal">{title}</h3>
+                    <p className="text-sm text-text-muted mt-1">{environment}</p>
                 <div
-                    className="deployment-status-badge"
-                    style={{ backgroundColor: getStatusColor(deploymentStatus) }}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
+                    style={{ backgroundColor: getStatusColor(deploymentStatus), color: 'var(--text-primary, #FDF8F5)' }}
                     title={getStatusDescription(deploymentStatus)}
                 >
-                    {isDeploying && <span className="spinner">⟳</span>}
+                    {isDeploying && <span className="inline-block animate-spin mr-1">\u27f3</span>}
                     {getStatusLabel(deploymentStatus) || 'NOT_STARTED'}
+                </div>
                 </div>
             </div>
 
-            <div className="project-meta">
-                <span className="environment-badge">{environment}</span>
-                <span className="last-deployed">Last deployed: {lastDeployed}</span>
+            <div className="space-y-2 mb-4">
+                                <div className="flex items-center justify-between text-sm">
+                                        <span className="inline-block px-2 py-1 rounded-md text-xs font-medium"
+                                            style={{ background: 'var(--accent-hover, #E8CCBF)', color: 'var(--accent-primary, #266150)' }}>{environment}</span>
+                                        <span style={{ color: 'var(--text-muted, rgba(79,72,70,0.6))' }}>Last deployed: {lastDeployed}</span>
+                                </div>
             </div>
 
             {subDomain && isLive && (
-                <div className="deployment-url">
-                    🌐 <a href={projectUrl} target="_blank" rel="noopener noreferrer">
-                        {displayUrl}
-                    </a>
-                    <span className="live-indicator">● LIVE</span>
+                <div className="mb-4 p-3 rounded-md"
+                  style={{ background: 'var(--accent-hover, #E8CCBF)', borderLeft: '3px solid var(--accent-primary, #266150)' }}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: 'var(--text-primary, #4F4846)' }}> <a href={projectUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary, #266150)', textDecoration: 'underline' }}>{displayUrl}</a></span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--accent-primary, #266150)' }}> LIVE</span>
+                    </div>
                 </div>
             )}
 
             {subDomain && !isLive && (
-                <div className="deployment-url inactive">
-                    🌐 {displayUrl}
-                    <span className="inactive-indicator">● OFFLINE</span>
+                <div className="mb-4 p-3 rounded-md" style={{ background: 'var(--bg-elevated, #f5dfd4)' }}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: 'var(--text-muted, rgba(79,72,70,0.6))' }}>🌐 {displayUrl}</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-muted, rgba(79,72,70,0.6))' }}>● OFFLINE</span>
+                    </div>
                 </div>
             )}
 
             {isFailed && (
-                <div className="failure-notice">
-                    ⚠️ Deployment failed. Check logs for details.
+                <div className="mb-4 p-3 rounded-md" style={{ background: 'rgba(168,107,79,0.13)', borderLeft: '3px solid #a86b4f' }}>
+                    <p className="text-sm" style={{ color: '#a86b4f' }}>⚠️ Deployment failed. Check logs for details.</p>
                 </div>
             )}
 
-            <div className="project-actions">
+            <div className="flex gap-2">
                 <button
-                    className="view-logs-btn"
+                    className="flex-1 px-4 py-2 rounded-md text-sm font-medium border transition-colors"
+                    style={{ color: 'var(--accent-primary, #266150)', borderColor: 'var(--accent-primary, #266150)', background: 'transparent' }}
                     onClick={handleViewLogs}
                     title="View deployment logs"
                 >
@@ -143,193 +151,15 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
                 {isFailed && (
                     <button
-                        className="retry-btn"
+                        className="px-4 py-2 rounded-md text-sm font-medium transition-all"
+                        style={{ background: 'var(--accent-primary, #266150)', color: 'var(--text-primary, #FDF8F5)' }}
                         onClick={handleRetryDeployment}
                         title="Retry failed deployment"
                     >
-                        🔄 Retry Deploy
+                        🔄 Retry
                     </button>
                 )}
             </div>
-
-            <style jsx>{`
-                .project-card {
-                    background: white;
-                    border-radius: 16px;
-                    padding: 1.5rem;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-                    border: 1px solid #e2e8f0;
-                    transition: all 0.3s ease;
-                    height: 100%;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1rem;
-                }
-
-                .project-card:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-                    border-color: #4A90E2;
-                }
-
-                .project-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    gap: 1rem;
-                }
-
-                .project-header h3 {
-                    margin: 0;
-                    color: #1a2a3a;
-                    font-size: 1.25rem;
-                    font-weight: 600;
-                    flex: 1;
-                }
-
-                .deployment-status-badge {
-                    padding: 0.25rem 0.75rem;
-                    border-radius: 12px;
-                    color: white;
-                    font-size: 0.75rem;
-                    font-weight: 500;
-                    white-space: nowrap;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.25rem;
-                    cursor: help;
-                }
-
-                .spinner {
-                    animation: spin 1s linear infinite;
-                    display: inline-block;
-                }
-
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-
-                .project-meta {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.5rem;
-                }
-
-                .environment-badge {
-                    background: #f0f8ff;
-                    color: #4A90E2;
-                    padding: 0.25rem 0.75rem;
-                    border-radius: 12px;
-                    font-size: 0.75rem;
-                    font-weight: 500;
-                    width: fit-content;
-                }
-
-                .last-deployed {
-                    color: #64748b;
-                    font-size: 0.875rem;
-                }
-
-                .deployment-url {
-                    background: #f0f9ff;
-                    padding: 0.75rem;
-                    border-radius: 8px;
-                    font-size: 0.875rem;
-                    color: #0369a1;
-                    border: 1px solid #bae6fd;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .deployment-url a {
-                    color: #0369a1;
-                    text-decoration: none;
-                    font-weight: 500;
-                }
-
-                .deployment-url a:hover {
-                    text-decoration: underline;
-                }
-
-                .deployment-url.inactive {
-                    background: #f8fafc;
-                    color: #64748b;
-                    border-color: #e2e8f0;
-                }
-
-                .live-indicator {
-                    color: #22c55e;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                }
-
-                .inactive-indicator {
-                    color: #64748b;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                }
-
-                .failure-notice {
-                    background: #fef2f2;
-                    color: #dc2626;
-                    padding: 0.75rem;
-                    border-radius: 8px;
-                    font-size: 0.875rem;
-                    border: 1px solid #fecaca;
-                }
-
-                .project-actions {
-                    padding-top: 1rem;
-                    border-top: 1px solid #e2e8f0;
-                    margin-top: auto;
-                    display: flex;
-                    gap: 0.5rem;
-                    flex-direction: column;
-                }
-
-                .view-logs-btn, .retry-btn {
-                    border: none;
-                    padding: 0.5rem 1rem;
-                    border-radius: 8px;
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    width: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                }
-
-                .view-logs-btn {
-                    background: #4A90E2;
-                    color: white;
-                }
-
-                .view-logs-btn:hover {
-                    background: #2E86AB;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-                }
-
-                .retry-btn {
-                    background: #f59e0b;
-                    color: white;
-                }
-
-                .retry-btn:hover {
-                    background: #d97706;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-                }
-
-                .retry-btn:active {
-                    transform: translateY(0);
-                }
-            `}</style>
         </div>
     );
 }

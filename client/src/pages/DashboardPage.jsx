@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
 import ProjectCard from '../components/ProjectCard'
 import DeploymentTable from '../components/DeploymentTable'
+import StatCard from '../components/StatCard'
 import { getProjects, getDeployments } from '../lib/api.js'
+import { COLORS } from '../constants/design'
 
 function DashboardPage() {
   const { user } = useAuth()
@@ -26,9 +28,6 @@ function DashboardPage() {
         getDeployments()
       ])
 
-      console.log('Projects response:', projectsResponse)
-      console.log('Deployments response:', deploymentsResponse)
-
       if (projectsResponse.status === 'success') {
         const transformedProjects = projectsResponse.data.projects.map(project => ({
           id: project.id,
@@ -51,7 +50,7 @@ function DashboardPage() {
           status: getDeploymentStatus(deployment.status),
           statusDisplay: deployment.status,
           timestamp: getTimeAgo(deployment.createdAt),
-          createdAt: deployment.createdAt, // Keep original date for calculations
+          createdAt: deployment.createdAt,
           projectId: deployment.projectId
         }))
         setDeployments(transformedDeployments)
@@ -65,37 +64,6 @@ function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Calculate deployment activity for the last 7 days
-  const getDeploymentActivityData = () => {
-    const activityData = []
-    const today = new Date()
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-      date.setHours(0, 0, 0, 0)
-
-      const nextDate = new Date(date)
-      nextDate.setDate(date.getDate() + 1)
-
-      // Count deployments for this day using the original createdAt timestamp
-      const deploymentsOnDay = deployments.filter(deployment => {
-        if (!deployment.createdAt) return false
-
-        const deploymentDate = new Date(deployment.createdAt)
-        return deploymentDate >= date && deploymentDate < nextDate
-      }).length
-
-      activityData.push({
-        date,
-        count: deploymentsOnDay,
-        label: date.toLocaleDateString('en-US', { weekday: 'short' })
-      })
-    }
-
-    return activityData
   }
 
   const getTimeAgo = (dateString) => {
@@ -126,292 +94,152 @@ function DashboardPage() {
 
   const stats = [
     {
-      icon: "🚀",
-      title: "Total Projects",
+      icon: "fa-code-branch",
       value: projects.length,
-      color: "#4A90E2"
+      label: "Projects",
+      trend: { direction: 'up', value: 12 }
     },
     {
-      icon: "✅",
-      title: "Active Deployments",
+      icon: "fa-check-circle",
       value: deployments.filter(d => d.status === "ready").length,
-      color: "#22C55E"
+      label: "Active Deployments",
+      trend: { direction: 'up', value: 8 }
     },
     {
-      icon: "⏳",
-      title: "In Progress",
+      icon: "fa-hourglass",
       value: deployments.filter(d => d.status === "prog" || d.status === "queue").length,
-      color: "#F59E0B"
+      label: "In Progress",
+      trend: { direction: 'down', value: 3 }
     },
     {
-      icon: "❌",
-      title: "Failed",
+      icon: "fa-exclamation-circle",
       value: deployments.filter(d => d.status === "fail").length,
-      color: "#EF4444"
+      label: "Failed",
+      trend: null
     }
   ]
 
   if (loading) {
     return (
-      <div className="dashboard-modern">
-        <section className="dashboard-header-section">
-          <div className="container">
-            <div className="dashboard-welcome">
-              <h1>Loading Dashboard...</h1>
-              <p>Fetching your projects and deployments</p>
-            </div>
-          </div>
-        </section>
-        <section className="dashboard-stats-section">
-          <div className="container">
-            <div className="loading-spinner-large">
-              <div className="spinner"></div>
-              <p>Loading data from server...</p>
-            </div>
-          </div>
-        </section>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-off-white">
+        <div className="w-12 h-12 rounded-full animate-spin border-4" style={{ borderColor: COLORS.BEIGE, borderTopColor: COLORS.SAGE }}></div>
+        <p className="mt-4 text-text-muted">Loading dashboard...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="dashboard-modern">
-        <section className="dashboard-header-section">
-          <div className="container">
-            <div className="dashboard-welcome">
-              <h1>Dashboard Error</h1>
-              <p>{error}</p>
-            </div>
-          </div>
-        </section>
-        <section className="dashboard-stats-section">
-          <div className="container">
-            <div className="error-container">
-              <button
-                className="btn-modern btn-primary"
-                onClick={fetchDashboardData}
-              >
-                Retry Loading
-              </button>
-            </div>
-          </div>
-        </section>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-off-white">
+        <div className="bg-white rounded-lg shadow-soft p-8 max-w-md">
+          <h2 className="text-lg font-semibold text-charcoal mb-2">Error Loading Dashboard</h2>
+          <p className="text-text-secondary mb-6">{error}</p>
+          <button
+            className="w-full px-4 py-2 rounded-md text-off-white font-medium transition-all"
+            style={{ background: COLORS.SAGE }}
+            onMouseEnter={(e) => e.target.style.background = COLORS.SAGE_DARK}
+            onMouseLeave={(e) => e.target.style.background = COLORS.SAGE}
+            onClick={fetchDashboardData}
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="dashboard-modern">
-      {/* Dashboard Header */}
-      <section className="dashboard-header-section">
-        <div className="container">
-          <div className="dashboard-welcome">
-            <h1>Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!</h1>
-            <p>Manage your projects and monitor deployments from your dashboard</p>
+    <div className="bg-off-white min-h-screen">
+      {/* Header Section */}
+      <section className="border-b border-beige bg-white shadow-soft">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-charcoal">Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!</h1>
+              <p className="text-text-muted mt-1">Manage your projects and monitor deployments</p>
+            </div>
+            <button
+              className="px-4 py-2 rounded-md text-sm font-medium text-sage border border-sage hover:bg-beige-light transition-colors"
+              onClick={fetchDashboardData}
+            >
+              🔄 Refresh
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="dashboard-stats-section">
-        <div className="container">
-          <div className="stats-grid">
-            {stats.map((stat, index) => (
-              <div key={index} className="stat-card" style={{ '--delay': `${index * 0.1}s`, '--color': stat.color }}>
-                <div className="stat-icon">{stat.icon}</div>
-                <div className="stat-content">
-                  <h3>{stat.value}</h3>
-                  <p>{stat.title}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Analytics Charts */}
-          <div className="analytics-charts-section">
-            <div className="charts-grid">
-              {/* Deployment Status Chart */}
-              <div className="chart-container">
-                <div className="chart-header">
-                  <h3>Deployment Status Overview</h3>
-                  <p>Current distribution of all deployments</p>
-                </div>
-                <div className="donut-chart">
-                  <svg viewBox="0 0 200 200" className="donut-svg">
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#f1f5f9"
-                      strokeWidth="20"
-                    />
-                    {/* Active Deployments */}
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#22C55E"
-                      strokeWidth="20"
-                      strokeDasharray={`${(stats[1].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
-                      strokeDashoffset="125.66"
-                      transform="rotate(-90 100 100)"
-                      className="donut-segment"
-                    />
-                    {/* In Progress */}
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#F59E0B"
-                      strokeWidth="20"
-                      strokeDasharray={`${(stats[2].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[2].value / Math.max(deployments.length, 1)) * 502.65}`}
-                      strokeDashoffset={`${125.66 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
-                      transform="rotate(-90 100 100)"
-                      className="donut-segment"
-                    />
-                    {/* Failed */}
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#EF4444"
-                      strokeWidth="20"
-                      strokeDasharray={`${(stats[3].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[3].value / Math.max(deployments.length, 1)) * 502.65}`}
-                      strokeDashoffset={`${125.66 - ((stats[1].value + stats[2].value) / Math.max(deployments.length, 1)) * 502.65}`}
-                      transform="rotate(-90 100 100)"
-                      className="donut-segment"
-                    />
-                  </svg>
-                  <div className="donut-center">
-                    <span className="donut-total">{deployments.length}</span>
-                    <span className="donut-label">Total</span>
-                  </div>
-                </div>
-                <div className="chart-legend">
-                  <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#22C55E' }}></span>
-                    <span>Active ({stats[1].value})</span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#F59E0B' }}></span>
-                    <span>In Progress ({stats[2].value})</span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#EF4444' }}></span>
-                    <span>Failed ({stats[3].value})</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Project Activity Chart */}
-              <div className="chart-container">
-                <div className="chart-header">
-                  <h3>Project Activity</h3>
-                  <p>Recent deployment activity over time</p>
-                </div>
-                <div className="bar-chart">
-                  <div className="bar-chart-grid">
-                    {(() => {
-                      const activityData = getDeploymentActivityData();
-                      const maxCount = Math.max(...activityData.map(d => d.count), 1);
-
-                      return activityData.map((dayData, index) => {
-                        const maxHeight = 120;
-                        const barHeight = dayData.count === 0 ? 0 : (dayData.count / maxCount) * maxHeight;
-                        const isToday = index === 6;
-
-                        return (
-                          <div key={index} className="bar-item">
-                            <div
-                              className="bar"
-                              style={{
-                                height: dayData.count === 0 ? '4px' : `${Math.max(barHeight, 12)}px`,
-                                backgroundColor: isToday ? '#4A90E2' : (dayData.count > 0 ? '#10b981' : '#e2e8f0'),
-                                opacity: dayData.count === 0 ? 0.3 : 1
-                              }}
-                              title={`${dayData.count} deployment${dayData.count !== 1 ? 's' : ''} on ${dayData.date.toLocaleDateString()}`}
-                            >
-                              <span className="bar-value" style={{ display: dayData.count === 0 ? 'none' : 'block' }}>
-                                {dayData.count}
-                              </span>
-                            </div>
-                            <span className="bar-label">
-                              {dayData.label}
-                            </span>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Stats Grid */}
+      <section className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <StatCard
+              key={index}
+              icon={`fas ${stat.icon}`}
+              value={stat.value}
+              label={stat.label}
+              trend={stat.trend}
+            />
+          ))}
         </div>
       </section>
 
       {/* Projects Section */}
-      <section className="dashboard-projects-section">
-        <div className="container">
-          <div className="section-header-modern">
-            <div className="header-content">
-              <h2>Your Projects</h2>
-              <p>All your deployed projects in one place</p>
-            </div>
+      <section className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-charcoal mb-2">Your Projects</h2>
+          <p className="text-text-muted">Manage and deploy your applications</p>
+        </div>
+
+        {projects.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-soft border border-beige-light p-12 text-center">
+            <div className="text-4xl mb-4">📦</div>
+            <h3 className="text-lg font-semibold text-charcoal mb-2">No projects yet</h3>
+            <p className="text-text-muted mb-6">Create your first project to get started</p>
             <button
-              className="btn-modern btn-primary"
+              className="px-6 py-2 rounded-md text-off-white font-medium transition-all"
+              style={{ background: COLORS.ACCENT }}
+              onMouseEnter={(e) => e.target.style.background = COLORS.ACCENT}
+              onMouseLeave={(e) => e.target.style.background = COLORS.ACCENT}
               onClick={() => window.appState.setPage('new-project')}
             >
-              <span>New Project</span>
-              <span className="btn-icon">+</span>
+              + New Project
             </button>
           </div>
-
-          <div className="projects-grid-modern">
-            {(showAllProjects ? projects : projects.slice(0, 4)).map((project, index) => (
-              <ProjectCard key={index} {...project} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(showAllProjects ? projects : projects.slice(0, 6)).map(project => (
+              <ProjectCard key={project.id} {...project} />
             ))}
           </div>
+        )}
 
-          {projects.length > 4 && (
-            <div className="show-more-container">
-              <button
-                className="btn-modern btn-outline"
-                onClick={() => setShowAllProjects(!showAllProjects)}
-              >
-                {showAllProjects ? (
-                  <>
-                    <span>Show Less</span>
-                    <span className="btn-icon">↑</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Show More ({projects.length - 4} more)</span>
-                    <span className="btn-icon">↓</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
+        {projects.length > 6 && (
+          <div className="mt-6 flex justify-center">
+            <button
+              className="px-4 py-2 rounded-md text-sage border border-sage hover:bg-beige-light transition-colors text-sm font-medium"
+              onClick={() => setShowAllProjects(!showAllProjects)}
+            >
+              {showAllProjects ? 'Show Less' : `Show More (${projects.length - 6} more)`}
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Deployments Section */}
-      <section className="dashboard-deployments-section">
-        <div className="container">
-          <div className="section-header-simple">
-            <h2>Recent Deployments</h2>
-            <p>Monitor your latest deployment activities</p>
-          </div>
-          <div className="deployments-table-container">
-            <DeploymentTable deployments={deployments} />
-          </div>
+      <section className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-charcoal mb-2">Recent Deployments</h2>
+          <p className="text-text-muted">Monitor your latest deployment activities</p>
         </div>
+        {deployments.length > 0 ? (
+          <DeploymentTable deployments={deployments} />
+        ) : (
+          <div className="bg-white rounded-lg shadow-soft border border-beige-light p-12 text-center">
+            <div className="text-4xl mb-4">🚀</div>
+            <h3 className="text-lg font-semibold text-charcoal mb-2">No deployments yet</h3>
+            <p className="text-text-muted">Your deployments will appear here</p>
+          </div>
+        )}
       </section>
     </div>
   )
