@@ -22,9 +22,9 @@ const io = new Server({ cors: '*' })
 
 const kafka = new Kafka({
     clientId: `api-server`,
-    brokers: [process.env.KAFKA_BROKER],
+    brokers: [process.env.KAFKA_BROKERS],
     ssl: {
-        ca: [fs.readFileSync(path.join(__dirname, 'kafka.pem'), 'utf-8')]
+        ca: [fs.readFileSync(path.join(__dirname, 'ca (7).pem'), 'utf-8')]
     },
     sasl: {
         username: process.env.KAFKA_USERNAME,
@@ -986,39 +986,66 @@ app.get('/api/resolve/:subdomain', async (req, res) => {
 })
 
 async function initkafkaConsumer() {
-    await consumer.connect();
-    await consumer.subscribe({ topics: ['container-logs'], fromBeginning: true })
+    try {
+        console.log('🔄 Attempting to connect to Kafka...')
+        await consumer.connect();
+        await consumer.subscribe({ topics: ['container-logs'], fromBeginning: true })
+        console.log('✅ Kafka connected and subscribed successfully')
 
-    await consumer.run({
+        await consumer.run({
 
-        eachBatch: async function ({ batch, heartbeat, commitOffsetsIfNecessary, resolveOffset }) {
+            eachBatch: async function ({ batch, heartbeat, commitOffsetsIfNecessary, resolveOffset }) {
 
-            const messages = batch.messages;
-            console.log(`Recv. ${messages.length} messages..`)
-            for (const message of messages) {
-                if (!message.value) continue;
-                const stringMessage = message.value.toString()
-                const { PROJECT_ID, DEPLOYEMENT_ID, log } = JSON.parse(stringMessage)
-                console.log({ log, DEPLOYEMENT_ID })
-                try {
-                    const { query_id } = await client.insert({
-                        table: 'log_events',
-                        values: [{ event_id: uuidv4(), deployment_id: DEPLOYEMENT_ID, log }],
-                        format: 'JSONEachRow'
-                    })
-                    console.log(query_id)
-                    resolveOffset(message.offset)
-                    await commitOffsetsIfNecessary(message.offset)
-                    await heartbeat()
-                } catch (err) {
-                    console.log(err)
+                const messages = batch.messages;
+                console.log(`Recv. ${messages.length} messages..`)
+                for (const message of messages) {
+                    if (!message.value) continue;
+                    const stringMessage = message.value.toString()
+                    const { PROJECT_ID, DEPLOYEMENT_ID, log } = JSON.parse(stringMessage)
+                    console.log({ log, DEPLOYEMENT_ID })
+                    try {
+                        const { query_id } = await client.insert({
+                            table: 'log_events',
+                            values: [{ event_id: uuidv4(), deployment_id: DEPLOYEMENT_ID, log }],
+                            format: 'JSONEachRow'
+                        })
+                        console.log(query_id)
+                        resolveOffset(message.offset)
+                        await commitOffsetsIfNecessary(message.offset)
+                        await heartbeat()
+                    } catch (err) {
+                        console.log(err)
+                    }
+
                 }
-
             }
-        }
-    })
+        })
+    } catch (error) {
+        console.error('❌ Kafka connection failed:', error.message)
+        console.log('⏳ Server will continue without Kafka. Retrying in 30 seconds...')
+        // Schedule retry
+        setTimeout(() => {
+            initkafkaConsumer().catch(err => {
+                console.error('Kafka retry failed:', err.message)
+            })
+        }, 30000)
+    }
 }
 
-initkafkaConsumer()
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        port: PORT
+    })
+})
 
-app.listen(PORT, () => console.log(`API Server Running..${PORT}`))
+// Start server first, then try Kafka connection
+app.listen(PORT, () => {
+    console.log(`API Server Running..${PORT}`)
+    // Initialize Kafka in background - don't block server startup
+    initkafkaConsumer().catch(err => {
+        console.error('Initial Kafka connection failed:', err.message)
+    })
+})
