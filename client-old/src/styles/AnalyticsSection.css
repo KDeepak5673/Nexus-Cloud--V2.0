@@ -1,7 +1,7 @@
 /* Analytics Section Styles */
 .analytics-section {
     padding: 4rem 0;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%);
     min-height: 500px;
 }
 
@@ -22,24 +22,20 @@
 .analytics-title h2 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #1a2a3a;
+    color: #000000;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #4A90E2, #2E86AB);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .analytics-title p {
     font-size: 1.1rem;
-    color: #64748b;
+    color: #6B7280;
     max-width: 600px;
     margin: 0 auto;
 }
 
 .refresh-analytics-btn {
-    background: #4A90E2;
-    color: white;
+    background: #000000;
+    color: #FFFFFF;
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -54,9 +50,9 @@
 }
 
 .refresh-analytics-btn:hover:not(:disabled) {
-    background: #2E86AB;
+    background: #374151;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .refresh-analytics-btn:disabled {
@@ -77,14 +73,14 @@
 .analytics-loading .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #e2e8f0;
-    border-top: 4px solid #4A90E2;
+    border: 4px solid #E5E7EB;
+    border-top: 4px solid #000000;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 .analytics-loading p {
-    color: #64748b;
+    color: #6B7280;
     font-size: 1.1rem;
 }
 
@@ -122,11 +118,11 @@
 }
 
 .analytics-card.primary {
-    --card-color: #4A90E2;
+    --card-color: #1F2937;
 }
 
 .analytics-card.success {
-    --card-color: #22c55e;
+    --card-color: #4B5563;
 }
 
 .analytics-card.info {
@@ -138,7 +134,7 @@
 }
 
 .analytics-card.live {
-    --card-color: #10b981;
+    --card-color: #6B7280;
 }
 
 .analytics-card.deploying {

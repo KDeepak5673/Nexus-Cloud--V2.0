@@ -56,7 +56,7 @@ function DeploymentTable({ deployments }) {
                             </button>
                             {' '}
                             <button className="btn btn-ghost" onClick={() => handleViewLogs(deployment.id, deployment.projectId)}>
-                                📋 View Logs
+                                View Logs
                             </button>
                         </td>
                     </tr>

@@ -13,7 +13,7 @@ function DocsPage() {
 
                 {/* Table of Contents */}
                 <div className="toc-section">
-                    <h2>📋 Table of Contents</h2>
+                    <h2>Table of Contents</h2>
                     <ul className="toc-list">
                         <li><a href="#getting-started">Getting Started</a></li>
                         <li><a href="#creating-project">Creating Your First Project</a></li>
@@ -23,12 +23,13 @@ function DocsPage() {
                         <li><a href="#project-urls">Project URLs & Access</a></li>
                         <li><a href="#user-profile">User Profile</a></li>
                         <li><a href="#troubleshooting">Troubleshooting</a></li>
+                        <li><a href="#platform-overview">Platform Architecture</a></li>
                     </ul>
                 </div>
 
                 {/* Getting Started */}
                 <section id="getting-started" className="docs-section">
-                    <h2>🚀 Getting Started</h2>
+                    <h2>Getting Started</h2>
                     <p>Welcome to Nexus Cloud! Our platform allows you to deploy your GitHub repositories with automatic subdomain generation and live project URLs.</p>
 
                     <h3>What You Can Do:</h3>
@@ -50,7 +51,7 @@ function DocsPage() {
 
                 {/* Creating Project */}
                 <section id="creating-project" className="docs-section">
-                    <h2>📦 Creating Your First Project</h2>
+                    <h2>Creating Your First Project</h2>
                     <p>Follow these steps to deploy your first project on Nexus Cloud:</p>
 
                     <ol className="numbered-steps">
@@ -67,7 +68,7 @@ function DocsPage() {
                         </li>
                         <li>
                             <strong>Deploy</strong>
-                            <p>Click <strong>"🚀 Deploy Project"</strong> to start the deployment process.</p>
+                            <p>Click <strong>"Deploy Project"</strong> to start the deployment process.</p>
                         </li>
                         <li>
                             <strong>Monitor Progress</strong>
@@ -76,13 +77,13 @@ function DocsPage() {
                     </ol>
 
                     <div className="tip-box">
-                        <strong>💡 Tip:</strong> Your project name will be automatically converted to a subdomain format. Special characters will be replaced with hyphens.
+                        <strong>Tip:</strong> Your project name will be automatically converted to a subdomain format. Special characters will be replaced with hyphens.
                     </div>
                 </section>
 
                 {/* Dashboard */}
                 <section id="dashboard" className="docs-section">
-                    <h2>📊 Dashboard Overview</h2>
+                    <h2>Dashboard Overview</h2>
                     <p>Your dashboard is the central hub for managing all your projects and deployments.</p>
 
                     <h3>Dashboard Features:</h3>
@@ -94,18 +95,18 @@ function DocsPage() {
                     </ul>
 
                     <h3>Project Status Indicators:</h3>
-                    <ul>
-                        <li><span className="status-ready">🟢 READY</span> - Project is live and accessible</li>
-                        <li><span className="status-progress">🟡 IN_PROGRESS</span> - Deployment is currently building</li>
-                        <li><span className="status-queued">🔵 QUEUED</span> - Waiting to start deployment</li>
-                        <li><span className="status-failed">🔴 FAIL</span> - Deployment failed (can be retried)</li>
-                        <li><span className="status-not-started">⚪ NOT_STARTED</span> - No deployments yet</li>
+                    <ul className="status-list">
+                        <li><span className="status-ready">READY</span> - Project is live and accessible</li>
+                        <li><span className="status-progress">IN_PROGRESS</span> - Deployment is currently building</li>
+                        <li><span className="status-queued">QUEUED</span> - Waiting to start deployment</li>
+                        <li><span className="status-failed">FAIL</span> - Deployment failed (can be retried)</li>
+                        <li><span className="status-not-started">NOT_STARTED</span> - No deployments yet</li>
                     </ul>
                 </section>
 
                 {/* Project Management */}
                 <section id="project-management" className="docs-section">
-                    <h2>🔧 Project Management</h2>
+                    <h2>Project Management</h2>
 
                     <h3>Project Cards</h3>
                     <p>Each project is displayed as a card showing:</p>
@@ -127,7 +128,7 @@ function DocsPage() {
 
                 {/* Deployment Process */}
                 <section id="deployment-process" className="docs-section">
-                    <h2>⚙️ Deployment Process</h2>
+                    <h2>Deployment Process</h2>
 
                     <h3>Deployment Lifecycle:</h3>
                     <ol className="numbered-steps">
@@ -148,7 +149,7 @@ function DocsPage() {
 
                 {/* Project URLs */}
                 <section id="project-urls" className="docs-section">
-                    <h2>🌐 Project URLs & Access</h2>
+                    <h2>Project URLs & Access</h2>
 
                     <h3>URL Format:</h3>
                     <p>Your projects are accessible at: <code>http://[project-name].localhost:8000</code></p>
@@ -172,7 +173,7 @@ function DocsPage() {
 
                 {/* User Profile */}
                 <section id="user-profile" className="docs-section">
-                    <h2>👤 User Profile</h2>
+                    <h2>User Profile</h2>
 
                     <h3>Profile Features:</h3>
                     <ul>
@@ -188,7 +189,7 @@ function DocsPage() {
 
                 {/* Troubleshooting */}
                 <section id="troubleshooting" className="docs-section">
-                    <h2>🔍 Troubleshooting</h2>
+                    <h2>Troubleshooting</h2>
 
                     <h3>Common Issues:</h3>
 
@@ -198,7 +199,7 @@ function DocsPage() {
                             <li>Check deployment logs for specific error messages</li>
                             <li>Verify your GitHub repository is accessible</li>
                             <li>Ensure your repository has proper build configuration</li>
-                            <li>Use the "🔄 Retry Deploy" button to attempt again</li>
+                            <li>Use the "Retry Deploy" button to attempt again</li>
                         </ul>
                     </div>
 
@@ -223,7 +224,7 @@ function DocsPage() {
 
                 {/* Platform Overview */}
                 <section id="platform-overview" className="docs-section">
-                    <h2>🏗️ Platform Architecture</h2>
+                    <h2>Platform Architecture</h2>
                     <p>Nexus Cloud consists of several components working together:</p>
 
                     <ul>

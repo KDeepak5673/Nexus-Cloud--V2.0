@@ -1,7 +1,7 @@
 /* Documentation Page Professional Styles */
 
 .docs-container {
-    background: linear-gradient(135deg, #fafbfc 0%, #f4f6f9 100%);
+    background: linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%);
     min-height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
@@ -10,12 +10,12 @@
     text-align: center;
     margin-bottom: 3rem;
     padding-bottom: 2rem;
-    border-bottom: 3px solid #e1e8ed;
+    border-bottom: 3px solid #E5E7EB;
 }
 
 .docs-header h1 {
     font-size: 2.75rem;
-    color: #1a365d;
+    color: #000000;
     margin-bottom: 1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -23,23 +23,23 @@
 
 .docs-header p {
     font-size: 1.25rem;
-    color: #4a5568;
+    color: #6B7280;
     max-width: 650px;
     margin: 0 auto;
     line-height: 1.5;
 }
 
 .toc-section {
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    background: #FFFFFF;
     padding: 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 3rem;
-    border: 1px solid #e1e8ed;
+    border: 1px solid #E5E7EB;
 }
 
 .toc-section h2 {
-    color: #2d3748;
+    color: #000000;
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     font-weight: 600;
@@ -55,7 +55,7 @@
 }
 
 .toc-list li a {
-    color: #3182ce;
+    color: #374151;
     text-decoration: none;
     padding: 0.75rem 1rem;
     display: block;
@@ -66,40 +66,40 @@
 }
 
 .toc-list li a:hover {
-    background: linear-gradient(145deg, #ebf8ff 0%, #bee3f8 100%);
-    color: #2c5282;
-    border-color: #90cdf4;
+    background: #F3F4F6;
+    color: #000000;
+    border-color: #E5E7EB;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .docs-section {
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    background: #FFFFFF;
     padding: 3rem;
     margin-bottom: 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e1e8ed;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #E5E7EB;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .docs-section:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .docs-section h2 {
-    color: #2d3748;
+    color: #000000;
     font-size: 1.875rem;
     margin-bottom: 1.5rem;
     font-weight: 700;
-    border-bottom: 3px solid #e1e8ed;
+    border-bottom: 3px solid #E5E7EB;
     padding-bottom: 0.75rem;
     letter-spacing: -0.025em;
 }
 
 .docs-section h3 {
-    color: #2d3748;
+    color: #000000;
     font-size: 1.375rem;
     margin: 2rem 0 1rem 0;
     font-weight: 600;
@@ -107,14 +107,14 @@
 }
 
 .docs-section h4 {
-    color: #3182ce;
+    color: #374151;
     font-size: 1.125rem;
     margin: 1.5rem 0 0.75rem 0;
     font-weight: 600;
 }
 
 .docs-section p {
-    color: #2d3748;
+    color: #1F2937;
     line-height: 1.7;
     margin-bottom: 1.25rem;
     font-size: 1rem;
@@ -127,14 +127,14 @@
 }
 
 .docs-section li {
-    color: #4a5568;
+    color: #4B5563;
     line-height: 1.7;
     margin-bottom: 0.75rem;
     font-size: 1rem;
 }
 
 .docs-section strong {
-    color: #2d3748;
+    color: #000000;
     font-weight: 600;
 }
 
@@ -157,8 +157,8 @@
     position: absolute;
     left: 0;
     top: 0;
-    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
-    color: white;
+    background: #000000;
+    color: #FFFFFF;
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
@@ -167,75 +167,75 @@
     justify-content: center;
     font-weight: 700;
     font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .tip-box {
-    background: linear-gradient(145deg, #f0f9ff 0%, #dbeafe 100%);
-    border: 1px solid #93c5fd;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
     border-radius: 12px;
     padding: 1.5rem;
     margin: 2rem 0;
-    color: #1e40af;
-    border-left: 4px solid #3b82f6;
+    color: #1F2937;
+    border-left: 4px solid #000000;
 }
 
 .tip-box strong {
-    color: #1e3a8a;
+    color: #000000;
 }
 
 .troubleshoot-item {
-    background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%);
-    border: 1px solid #fbbf24;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
     border-radius: 12px;
     padding: 2rem;
     margin: 1.5rem 0;
-    border-left: 4px solid #f59e0b;
+    border-left: 4px solid #6B7280;
 }
 
 .troubleshoot-item h4 {
-    color: #92400e;
+    color: #000000;
     margin-top: 0;
     font-weight: 600;
 }
 
 .troubleshoot-item ul li {
-    color: #78350f;
+    color: #374151;
 }
 
 code {
-    background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+    background: #F3F4F6;
     padding: 0.375rem 0.75rem;
     border-radius: 6px;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    color: #3182ce;
+    color: #1F2937;
     font-weight: 500;
-    border: 1px solid #cbd5e0;
+    border: 1px solid #E5E7EB;
     font-size: 0.9em;
 }
 
 .status-ready {
-    color: #16a34a;
+    color: #000000;
     font-weight: 600;
 }
 
 .status-progress {
-    color: #ea580c;
+    color: #4B5563;
     font-weight: 600;
 }
 
 .status-queued {
-    color: #7c3aed;
+    color: #6B7280;
     font-weight: 600;
 }
 
 .status-failed {
-    color: #dc2626;
+    color: #1F2937;
     font-weight: 600;
 }
 
 .status-not-started {
-    color: #6b7280;
+    color: #9CA3AF;
     font-weight: 600;
 }
 
