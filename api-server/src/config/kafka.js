@@ -1,15 +1,3 @@
-/**
- * KAFKA CONFIGURATION
- * 
- * This file sets up the Kafka client and consumer for receiving logs.
- * 
- * What is Kafka?
- * - Message queue system (like a pipeline for messages)
- * - Your build containers send logs → Kafka → Your API server receives them
- * 
- * Flow: Build Container → Kafka Topic (container-logs) → Consumer → Your API
- */
-
 const { Kafka, logLevel } = require('kafkajs')
 const fs = require('fs')
 const path = require('path')

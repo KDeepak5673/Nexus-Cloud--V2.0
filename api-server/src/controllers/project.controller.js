@@ -1,15 +1,6 @@
-/**
- * PROJECT CONTROLLERS
- * 
- * Handle HTTP requests for project endpoints
- */
-
 const projectService = require('../services/project.service')
 
-/**
- * POST /project
- * Create a new project
- */
+
 async function createProject(req, res, next) {
     try {
         const { name, gitURL } = req.body
@@ -26,10 +17,7 @@ async function createProject(req, res, next) {
     }
 }
 
-/**
- * GET /projects
- * Get all projects for authenticated user
- */
+
 async function getProjects(req, res, next) {
     try {
         const projects = await projectService.getUserProjects(req.user.id)
@@ -43,10 +31,7 @@ async function getProjects(req, res, next) {
     }
 }
 
-/**
- * GET /projects/:id
- * Get single project by ID
- */
+
 async function getProjectById(req, res, next) {
     try {
         const { id } = req.params

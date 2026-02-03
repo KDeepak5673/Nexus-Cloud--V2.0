@@ -1,21 +1,7 @@
-/**
- * PROJECT SERVICE
- * 
- * Handles all project-related business logic:
- * - Create projects
- * - Validate GitHub repositories
- * - Get projects for a user
- * - Update/delete projects
- */
-
 const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
 
-/**
- * Validate that a GitHub repository exists and is accessible
- * @param {string} gitURL - GitHub repository URL
- * @returns {Object} Repository info or throws error
- */
+
 async function validateGitHubRepository(gitURL) {
     console.log(`🔍 Validating GitHub repository: ${gitURL}`)
 
@@ -57,13 +43,7 @@ async function validateGitHubRepository(gitURL) {
     }
 }
 
-/**
- * Create a new project
- * @param {string} name - Project name
- * @param {string} gitURL - GitHub repository URL
- * @param {number} userId - User ID who owns the project
- * @returns {Object} Created project
- */
+
 async function createProject(name, gitURL, userId) {
     // Validate GitHub repository first
     await validateGitHubRepository(gitURL)
@@ -81,11 +61,7 @@ async function createProject(name, gitURL, userId) {
     return project
 }
 
-/**
- * Get all projects for a user
- * @param {number} userId - User ID
- * @returns {Array} List of projects with latest deployment
- */
+
 async function getUserProjects(userId) {
     return await prisma.project.findMany({
         where: { userId },
@@ -99,11 +75,7 @@ async function getUserProjects(userId) {
     })
 }
 
-/**
- * Get project by ID with all deployments
- * @param {string} projectId - Project ID
- * @returns {Object} Project with deployments and URLs
- */
+
 async function getProjectById(projectId) {
     const project = await prisma.project.findUnique({
         where: { id: projectId },
