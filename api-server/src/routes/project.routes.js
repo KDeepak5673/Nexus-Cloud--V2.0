@@ -7,6 +7,7 @@
 const express = require('express')
 const router = express.Router()
 const projectController = require('../controllers/project.controller')
+const deploymentController = require('../controllers/deployment.controller')
 const { requireAuth } = require('../middlewares/auth.middleware')
 
 // All routes require authentication
@@ -18,5 +19,8 @@ router.get('/', requireAuth, projectController.getProjects)
 
 // GET /projects/:id - Get single project
 router.get('/:id', projectController.getProjectById)
+
+// POST /projects/:projectId/deploy - Deploy a project
+router.post('/:projectId/deploy', requireAuth, deploymentController.deployProject)
 
 module.exports = router
