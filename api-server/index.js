@@ -29,15 +29,20 @@ httpServer.listen(PORT, () => {
     console.log(`🚀 API Server Running on port ${PORT}`)
     console.log(`🔌 Socket.IO Server Running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
-    
+
     // Initialize Kafka consumer (if needed)
-    // const kafkaService = require('./src/services/kafka.service')
-    // kafkaService.initKafkaConsumer().catch(console.error)
+    const kafkaService = require('./src/services/kafka.service')
+    kafkaService.initKafkaConsumer().catch(console.error)
 })
 
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
     console.log('SIGTERM received, closing server gracefully')
+
+    // Disconnect Kafka
+    const kafkaService = require('./src/services/kafka.service')
+    await kafkaService.disconnectKafka()
+
     httpServer.close(() => {
         console.log('Server closed')
         process.exit(0)
