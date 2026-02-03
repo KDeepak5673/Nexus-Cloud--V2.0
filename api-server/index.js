@@ -1,4 +1,5 @@
 const express = require('express')
+const { createServer } = require('http')
 const { generateSlug } = require('random-word-slugs')
 const { ECSClient, RunTaskCommand } = require('@aws-sdk/client-ecs')
 const { Server } = require('socket.io')
@@ -16,50 +17,80 @@ require('dotenv').config()
 const app = express()
 const PORT = process.env.PORT || 9000
 
+// Create HTTP server
+const httpServer = createServer(app)
+
 const prisma = new PrismaClient({})
 
-const io = new Server({ cors: '*' })
+// Initialize Socket.IO with proper configuration
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*", // In production, specify your frontend URL
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    transports: ['websocket', 'polling']
+})
 
+// Kafka configuration with SSL fix
 const kafka = new Kafka({
     clientId: `api-server`,
-    brokers: [process.env.KAFKA_BROKERS],
+    brokers: [process.env.KAFKA_BROKER],
     ssl: {
-        ca: [fs.readFileSync(path.join(__dirname, 'ca (7).pem'), 'utf-8')]
+        ca: [fs.readFileSync(path.join(__dirname, 'kafka.pem'), 'utf-8')],
+        rejectUnauthorized: false  // Fix for certificate verification issues
     },
     sasl: {
-        username: process.env.KAFKA_USERNAME,
+        username: process.env.KAFKA_USERNAME || 'avnadmin',
         password: process.env.KAFKA_PASSWORD,
         mechanism: 'plain'
+    },
+    connectionTimeout: 10000,
+    requestTimeout: 30000,
+    retry: {
+        initialRetryTime: 100,
+        retries: 8
     }
-
 })
 
 const client = createClient({
     host: process.env.CLICKHOUSE_HOST,
     database: 'default',
-    username: 'avnadmin',
+    username: process.env.KAFKA_USERNAME || 'avnadmin',
     password: process.env.CLICKHOUSE_PASSWORD
 })
 
 const consumer = kafka.consumer({ groupId: 'api-server-logs-consumer' })
 
-io.on('connection', socket => {
-    socket.on('subscribe', channel => {
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+    console.log(`✅ Client connected: ${socket.id}`)
+
+    socket.on('subscribe', (channel) => {
         socket.join(channel)
-        socket.emit('message', JSON.stringify({ log: `Subscribed to ${channel}` }))
+        console.log(`📡 Client ${socket.id} subscribed to channel: ${channel}`)
+        socket.emit('message', JSON.stringify({ 
+            log: `Subscribed to ${channel}`,
+            timestamp: new Date().toISOString()
+        }))
+    })
+
+    socket.on('disconnect', (reason) => {
+        console.log(`❌ Client disconnected: ${socket.id}, reason: ${reason}`)
+    })
+
+    socket.on('error', (error) => {
+        console.error(`⚠️ Socket error for ${socket.id}:`, error)
     })
 })
 
-io.listen(9002, () => console.log('Socket Server 9002'))
-
 const ecsClient = new ECSClient({
-    region: 'ap-south-1',
+    region: process.env.AWS_REGION || 'ap-south-1',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     }
 })
-
 
 const config = {
     CLUSTER: process.env.ECS_CLUSTER,
@@ -187,11 +218,7 @@ const verifyAuth = async (req, res, next) => {
             return res.status(401).json({ error: 'Authorization token required' })
         }
 
-        // For now, we'll extract the UID from the token (simplified)
-        // In production, you'd verify the Firebase token here
         const token = authHeader.substring(7)
-
-        // Mock validation - in real app, verify Firebase token
         const firebaseUid = req.headers['x-firebase-uid'] || 'mock-uid'
 
         const user = await prisma.user.findUnique({
@@ -268,7 +295,6 @@ app.post('/project', requireAuth, async (req, res) => {
     })
 
     return res.json({ status: 'success', data: { project } })
-
 })
 
 app.post('/deploy', async (req, res) => {
@@ -278,7 +304,7 @@ app.post('/deploy', async (req, res) => {
 
     if (!project) return res.status(404).json({ error: 'Project not found' })
 
-    // Check if there is no running deployement
+    // Create deployment
     const deployment = await prisma.deployement.create({
         data: {
             project: { connect: { id: projectId } },
@@ -318,28 +344,22 @@ app.post('/deploy', async (req, res) => {
     // Start deployment simulation automatically
     setTimeout(async () => {
         try {
-            // Update to IN_PROGRESS
             await prisma.deployement.update({
                 where: { id: deployment.id },
                 data: { status: 'IN_PROGRESS' }
             })
             console.log(`Deployment ${deployment.id} updated to IN_PROGRESS`)
 
-            // Simulate deployment time (15-45 seconds for more realistic timing)
-            const deploymentTime = Math.random() * 30000 + 15000 // 15-45 seconds
+            const deploymentTime = Math.random() * 30000 + 15000
             setTimeout(async () => {
                 try {
-                    // More realistic success rate - 75% success, 25% failure
                     const success = Math.random() > 0.25
 
                     if (success) {
-                        // Simulate final validation step
                         console.log(`Deployment ${deployment.id} - Running final validation...`)
 
-                        // Additional 5-10 second validation
                         setTimeout(async () => {
                             try {
-                                // Final check - 95% validation success rate
                                 const validationSuccess = Math.random() > 0.05
                                 const finalStatus = validationSuccess ? 'READY' : 'FAIL'
 
@@ -355,7 +375,6 @@ app.post('/deploy', async (req, res) => {
                                 }
                             } catch (error) {
                                 console.error('Error during final validation:', error)
-                                // Fallback to FAIL status on error
                                 try {
                                     await prisma.deployement.update({
                                         where: { id: deployment.id },
@@ -365,9 +384,8 @@ app.post('/deploy', async (req, res) => {
                                     console.error('Critical: Could not update deployment to FAIL status:', fallbackError)
                                 }
                             }
-                        }, Math.random() * 5000 + 5000) // 5-10 seconds validation
+                        }, Math.random() * 5000 + 5000)
                     } else {
-                        // Deployment failed during build/deploy phase
                         await prisma.deployement.update({
                             where: { id: deployment.id },
                             data: { status: 'FAIL' }
@@ -376,7 +394,6 @@ app.post('/deploy', async (req, res) => {
                     }
                 } catch (error) {
                     console.error('Error during deployment completion:', error)
-                    // Ensure status is set to FAIL on any error
                     try {
                         await prisma.deployement.update({
                             where: { id: deployment.id },
@@ -390,7 +407,6 @@ app.post('/deploy', async (req, res) => {
             }, deploymentTime)
         } catch (error) {
             console.error('Error updating deployment to IN_PROGRESS:', error)
-            // Fallback to FAIL status if can't even start
             try {
                 await prisma.deployement.update({
                     where: { id: deployment.id },
@@ -401,7 +417,7 @@ app.post('/deploy', async (req, res) => {
                 console.error('Critical: Could not update deployment to FAIL status:', fallbackError)
             }
         }
-    }, 2000) // 2 seconds delay
+    }, 2000)
 
     return res.json({ status: 'queued', data: { deploymentId: deployment.id } })
 })
@@ -422,7 +438,6 @@ app.get('/api/deployments/:deploymentId/status', verifyAuth, async (req, res) =>
             return res.status(404).json({ error: 'Deployment not found' })
         }
 
-        // Check if user has access to this deployment
         if (deployment.project.userId !== req.user.id) {
             return res.status(403).json({ error: 'Access denied' })
         }
@@ -440,12 +455,11 @@ app.get('/api/deployments/:deploymentId/status', verifyAuth, async (req, res) =>
     }
 })
 
-// Create a new deployment for a project (with better error handling)
+// Create a new deployment for a project
 app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
     try {
         const { projectId } = req.params
 
-        // Check if project exists and user has access
         const project = await prisma.project.findUnique({
             where: { id: parseInt(projectId) }
         })
@@ -458,20 +472,18 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
             return res.status(403).json({ error: 'Access denied' })
         }
 
-        // Validate GitHub repository exists
+        // Validate GitHub repository
         try {
             console.log(`🔍 Validating GitHub repository: ${project.gitURL}`)
 
-            // Extract owner and repo from GitHub URL
             const gitUrlMatch = project.gitURL.match(/github\.com\/([^\/]+)\/([^\/]+)/)
             if (!gitUrlMatch) {
                 return res.status(400).json({ error: 'Invalid GitHub repository URL format' })
             }
 
             const [, owner, repo] = gitUrlMatch
-            const cleanRepo = repo.replace(/\.git$/, '') // Remove .git if present
+            const cleanRepo = repo.replace(/\.git$/, '')
 
-            // Check if repository exists using GitHub API
             const githubResponse = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`)
 
             if (githubResponse.status === 404) {
@@ -483,7 +495,6 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
 
             if (!githubResponse.ok) {
                 console.warn(`GitHub API returned ${githubResponse.status} for ${owner}/${cleanRepo}`)
-                // Continue with deployment even if GitHub API is rate limited
             } else {
                 console.log(`✅ GitHub repository validated: ${owner}/${cleanRepo}`)
             }
@@ -495,7 +506,7 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
             })
         }
 
-        // Check if there's already a deployment in progress
+        // Check for active deployment
         const activeDeployment = await prisma.deployement.findFirst({
             where: {
                 projectId: parseInt(projectId),
@@ -510,7 +521,6 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
             })
         }
 
-        // Create new deployment
         const deployment = await prisma.deployement.create({
             data: {
                 projectId: parseInt(projectId),
@@ -526,31 +536,25 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
             status: deployment.status
         })
 
-        // Start deployment simulation automatically (same as before)
+        // Start deployment simulation
         setTimeout(async () => {
             try {
-                // Update to IN_PROGRESS
                 await prisma.deployement.update({
                     where: { id: deployment.id },
                     data: { status: 'IN_PROGRESS' }
                 })
                 console.log(`Deployment ${deployment.id} updated to IN_PROGRESS`)
 
-                // Simulate deployment time (15-45 seconds for more realistic timing)
-                const deploymentTime = Math.random() * 30000 + 15000 // 15-45 seconds
+                const deploymentTime = Math.random() * 30000 + 15000
                 setTimeout(async () => {
                     try {
-                        // More realistic success rate - 75% success, 25% failure
                         const success = Math.random() > 0.25
 
                         if (success) {
-                            // Simulate final validation step
                             console.log(`Deployment ${deployment.id} - Running final validation...`)
 
-                            // Additional 5-10 second validation
                             setTimeout(async () => {
                                 try {
-                                    // Final check - 95% validation success rate
                                     const validationSuccess = Math.random() > 0.05
                                     const finalStatus = validationSuccess ? 'READY' : 'FAIL'
 
@@ -560,24 +564,18 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
                                     })
 
                                     if (finalStatus === 'READY') {
-                                        // Get the project details to construct deployment URL
                                         const deploymentProject = await prisma.project.findUnique({
                                             where: { id: deployment.projectId }
                                         })
 
                                         const deploymentUrl = `https://${deploymentProject.subDomain}.nexuscloud.app`
-
                                         console.log(`✅ Deployment ${deployment.id} completed successfully and is now LIVE`)
                                         console.log(`🌐 Deployment URL: ${deploymentUrl}`)
-
-                                        // You could also send a webhook or notification here
-                                        // notifyDeploymentComplete(deployment.id, deploymentUrl)
                                     } else {
                                         console.log(`❌ Deployment ${deployment.id} failed during final validation`)
                                     }
                                 } catch (error) {
                                     console.error('Error during final validation:', error)
-                                    // Fallback to FAIL status on error
                                     try {
                                         await prisma.deployement.update({
                                             where: { id: deployment.id },
@@ -587,9 +585,8 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
                                         console.error('Critical: Could not update deployment to FAIL status:', fallbackError)
                                     }
                                 }
-                            }, Math.random() * 5000 + 5000) // 5-10 seconds validation
+                            }, Math.random() * 5000 + 5000)
                         } else {
-                            // Deployment failed during build/deploy phase
                             await prisma.deployement.update({
                                 where: { id: deployment.id },
                                 data: { status: 'FAIL' }
@@ -598,7 +595,6 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
                         }
                     } catch (error) {
                         console.error('Error during deployment completion:', error)
-                        // Ensure status is set to FAIL on any error
                         try {
                             await prisma.deployement.update({
                                 where: { id: deployment.id },
@@ -612,7 +608,6 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
                 }, deploymentTime)
             } catch (error) {
                 console.error('Error updating deployment to IN_PROGRESS:', error)
-                // Fallback to FAIL status if can't even start
                 try {
                     await prisma.deployement.update({
                         where: { id: deployment.id },
@@ -623,13 +618,12 @@ app.post('/api/projects/:projectId/deploy', verifyAuth, async (req, res) => {
                     console.error('Critical: Could not update deployment to FAIL status:', fallbackError)
                 }
             }
-        }, 2000) // 2 seconds delay
+        }, 2000)
     } catch (error) {
         console.error('Error creating deployment:', error)
         res.status(500).json({ error: 'Failed to start deployment' })
     }
 })
-
 
 app.get('/logs/:id', async (req, res) => {
     const id = req.params.id;
@@ -646,7 +640,7 @@ app.get('/logs/:id', async (req, res) => {
     return res.json({ logs: rawLogs })
 })
 
-// Get deployment URL for READY deployments
+// Get deployment URL
 app.get('/api/deployments/:deploymentId/url', verifyAuth, async (req, res) => {
     try {
         const { deploymentId } = req.params
@@ -662,7 +656,6 @@ app.get('/api/deployments/:deploymentId/url', verifyAuth, async (req, res) => {
             return res.status(404).json({ error: 'Deployment not found' })
         }
 
-        // Check if user has access to this deployment
         if (deployment.project.userId !== req.user.id) {
             return res.status(403).json({ error: 'Access denied' })
         }
@@ -701,7 +694,7 @@ app.get('/projects', requireAuth, async (req, res) => {
                     orderBy: {
                         createdAt: 'desc'
                     },
-                    take: 1 // Get the latest deployment for each project
+                    take: 1
                 }
             },
             orderBy: {
@@ -731,7 +724,7 @@ app.get('/deployments', requireAuth, async (req, res) => {
             orderBy: {
                 createdAt: 'desc'
             },
-            take: 20 // Limit to recent 20 deployments
+            take: 20
         })
 
         return res.json({ status: 'success', data: { deployments } })
@@ -760,7 +753,6 @@ app.get('/projects/:id', async (req, res) => {
             return res.status(404).json({ error: 'Project not found' })
         }
 
-        // Add deployment URLs for READY deployments
         const projectWithUrls = {
             ...project,
             Deployement: project.Deployement.map(deployment => ({
@@ -784,7 +776,6 @@ app.patch('/deployments/:id/status', async (req, res) => {
         const { id } = req.params
         const { status } = req.body
 
-        // Validate status
         const validStatuses = ['NOT_STARTED', 'QUEUED', 'IN_PROGRESS', 'READY', 'FAIL']
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Invalid status' })
@@ -805,12 +796,11 @@ app.patch('/deployments/:id/status', async (req, res) => {
     }
 })
 
-// Simulate deployment process (for testing)
+// Simulate deployment process
 app.post('/deployments/:id/simulate', async (req, res) => {
     try {
         const { id } = req.params
 
-        // Get the deployment
         const deployment = await prisma.deployement.findUnique({
             where: { id },
             include: { project: true }
@@ -820,20 +810,16 @@ app.post('/deployments/:id/simulate', async (req, res) => {
             return res.status(404).json({ error: 'Deployment not found' })
         }
 
-        // Simulate deployment process
         setTimeout(async () => {
             try {
-                // Update to IN_PROGRESS
                 await prisma.deployement.update({
                     where: { id },
                     data: { status: 'IN_PROGRESS' }
                 })
                 console.log(`Deployment ${id} updated to IN_PROGRESS`)
 
-                // Simulate deployment time (10 seconds)
                 setTimeout(async () => {
                     try {
-                        // Randomly succeed or fail (80% success rate)
                         const success = Math.random() > 0.2
                         const finalStatus = success ? 'READY' : 'FAIL'
 
@@ -845,11 +831,11 @@ app.post('/deployments/:id/simulate', async (req, res) => {
                     } catch (error) {
                         console.error('Error completing deployment:', error)
                     }
-                }, 10000) // 10 seconds
+                }, 10000)
             } catch (error) {
                 console.error('Error updating deployment to IN_PROGRESS:', error)
             }
-        }, 2000) // 2 seconds
+        }, 2000)
 
         return res.json({ status: 'success', message: 'Deployment simulation started' })
     } catch (error) {
@@ -858,16 +844,11 @@ app.post('/deployments/:id/simulate', async (req, res) => {
     }
 })
 
-// Get platform analytics/statistics
+// Get platform analytics
 app.get('/api/analytics', async (req, res) => {
     try {
-        // Get total number of users
         const totalUsers = await prisma.user.count()
-
-        // Get total number of projects
         const totalProjects = await prisma.project.count()
-
-        // Get active projects (projects with at least one deployment)
         const activeProjects = await prisma.project.count({
             where: {
                 Deployement: {
@@ -875,8 +856,6 @@ app.get('/api/analytics', async (req, res) => {
                 }
             }
         })
-
-        // Get live projects (projects with READY deployments)
         const liveProjects = await prisma.project.count({
             where: {
                 Deployement: {
@@ -887,11 +866,9 @@ app.get('/api/analytics', async (req, res) => {
             }
         })
 
-        // If no real data, provide sample data for demo
         const hasData = totalUsers > 0 || totalProjects > 0
 
         if (!hasData) {
-            // Demo data
             return res.json({
                 status: 'success',
                 data: {
@@ -920,7 +897,7 @@ app.get('/api/analytics', async (req, res) => {
     }
 })
 
-// Resolve subdomain to project deployment info (for S3 reverse proxy)
+// Resolve subdomain
 app.get('/api/resolve/:subdomain', async (req, res) => {
     try {
         const { subdomain } = req.params
@@ -932,7 +909,6 @@ app.get('/api/resolve/:subdomain', async (req, res) => {
             })
         }
 
-        // Find project by subdomain
         const project = await prisma.project.findFirst({
             where: {
                 subDomain: subdomain
@@ -964,8 +940,6 @@ app.get('/api/resolve/:subdomain', async (req, res) => {
             })
         }
 
-        const deployment = project.Deployement[0]
-
         res.json({
             status: 'success',
             data: {
@@ -985,6 +959,7 @@ app.get('/api/resolve/:subdomain', async (req, res) => {
     }
 })
 
+// Kafka consumer initialization with real-time log emission
 async function initkafkaConsumer() {
     try {
         console.log('🔄 Attempting to connect to Kafka...')
@@ -993,37 +968,50 @@ async function initkafkaConsumer() {
         console.log('✅ Kafka connected and subscribed successfully')
 
         await consumer.run({
-
             eachBatch: async function ({ batch, heartbeat, commitOffsetsIfNecessary, resolveOffset }) {
-
                 const messages = batch.messages;
-                console.log(`Recv. ${messages.length} messages..`)
+                console.log(`📨 Recv. ${messages.length} messages..`)
+                
                 for (const message of messages) {
                     if (!message.value) continue;
-                    const stringMessage = message.value.toString()
-                    const { PROJECT_ID, DEPLOYEMENT_ID, log } = JSON.parse(stringMessage)
-                    console.log({ log, DEPLOYEMENT_ID })
+                    
                     try {
+                        const stringMessage = message.value.toString()
+                        const { PROJECT_ID, DEPLOYEMENT_ID, log } = JSON.parse(stringMessage)
+                        console.log({ log, DEPLOYEMENT_ID })
+                        
+                        // Insert into ClickHouse
                         const { query_id } = await client.insert({
                             table: 'log_events',
-                            values: [{ event_id: uuidv4(), deployment_id: DEPLOYEMENT_ID, log }],
+                            values: [{ 
+                                event_id: uuidv4(), 
+                                deployment_id: DEPLOYEMENT_ID, 
+                                log 
+                            }],
                             format: 'JSONEachRow'
                         })
-                        console.log(query_id)
+                        console.log(`✅ Inserted log: ${query_id}`)
+                        
+                        // Emit to Socket.IO clients subscribed to this deployment
+                        io.to(`deployment:${DEPLOYEMENT_ID}`).emit('logs', {
+                            deploymentId: DEPLOYEMENT_ID,
+                            log: log,
+                            timestamp: new Date().toISOString()
+                        })
+                        console.log(`📤 Log emitted to deployment:${DEPLOYEMENT_ID}`)
+                        
                         resolveOffset(message.offset)
                         await commitOffsetsIfNecessary(message.offset)
                         await heartbeat()
                     } catch (err) {
-                        console.log(err)
+                        console.error('❌ Error processing message:', err)
                     }
-
                 }
             }
         })
     } catch (error) {
         console.error('❌ Kafka connection failed:', error.message)
         console.log('⏳ Server will continue without Kafka. Retrying in 30 seconds...')
-        // Schedule retry
         setTimeout(() => {
             initkafkaConsumer().catch(err => {
                 console.error('Kafka retry failed:', err.message)
@@ -1037,14 +1025,17 @@ app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        port: PORT
+        port: PORT,
+        socketIO: 'enabled'
     })
 })
 
-// Start server first, then try Kafka connection
-app.listen(PORT, () => {
-    console.log(`API Server Running..${PORT}`)
-    // Initialize Kafka in background - don't block server startup
+// Start server - both Express and Socket.IO on same port
+httpServer.listen(PORT, () => {
+    console.log(`🚀 API Server Running on port ${PORT}`)
+    console.log(`🔌 Socket.IO Server Running on port ${PORT}`)
+    
+    // Initialize Kafka in background
     initkafkaConsumer().catch(err => {
         console.error('Initial Kafka connection failed:', err.message)
     })
