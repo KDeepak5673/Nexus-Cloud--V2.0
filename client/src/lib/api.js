@@ -9,12 +9,13 @@ async function request(path, options = {}) {
     const user = auth.currentUser
     const headers = {
         'Content-Type': 'application/json',
-        ...(user && { 'x-firebase-uid': user.uid })
+        ...(user && { 'x-firebase-uid': user.uid }),
+        ...options.headers
     }
 
     const res = await fetch(url, {
-        headers,
-        ...options
+        ...options,
+        headers
     })
     const text = await res.text()
     try { return JSON.parse(text) } catch (e) { return text }
@@ -32,11 +33,11 @@ export async function getUser(firebaseUid) {
 }
 
 export async function createProject(payload) {
-    return request('/project', { method: 'POST', body: JSON.stringify(payload) })
+    return request('/projects', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function deployProject(payload) {
-    return request('/deploy', { method: 'POST', body: JSON.stringify(payload) })
+    return request('/api/deploy', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function getLogs(id) {
@@ -48,7 +49,7 @@ export async function getProjects() {
 }
 
 export async function getDeployments() {
-    return request('/deployments')
+    return request('/api/deployments')
 }
 
 export async function getProject(id) {
@@ -59,14 +60,66 @@ export async function getUserProfile(firebaseUid) {
     return request(`/auth/user/${firebaseUid}`)
 }
 
+export async function deployProjectById(projectId) {
+    return request(`/api/projects/${projectId}/deploy`, { method: 'POST' })
+}
+
+export async function getDeploymentStatus(deploymentId) {
+    const user = auth.currentUser
+    return request(`/api/deployments/${deploymentId}/status`, {
+        headers: {
+            'Authorization': user ? `Bearer ${await user.getIdToken()}` : '',
+            'x-firebase-uid': user?.uid
+        }
+    })
+}
+
+export async function getDeploymentUrl(deploymentId) {
+    const user = auth.currentUser
+    return request(`/api/deployments/${deploymentId}/url`, {
+        headers: {
+            'Authorization': user ? `Bearer ${await user.getIdToken()}` : '',
+            'x-firebase-uid': user?.uid
+        }
+    })
+}
+
+export async function getAnalytics() {
+    return request('/api/analytics')
+}
+
+export async function resolveSubdomain(subdomain) {
+    return request(`/api/resolve/${subdomain}`)
+}
+
+export async function updateDeploymentStatus(deploymentId, status) {
+    return request(`/api/deployments/${deploymentId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+    })
+}
+
+export async function simulateDeployment(deploymentId) {
+    return request(`/api/deployments/${deploymentId}/simulate`, {
+        method: 'POST'
+    })
+}
+
 export default {
     registerUser,
     getUser,
     createProject,
     deployProject,
+    deployProjectById,
     getLogs,
     getProjects,
     getDeployments,
+    getDeploymentStatus,
+    getDeploymentUrl,
     getProject,
-    getUserProfile
+    getUserProfile,
+    getAnalytics,
+    resolveSubdomain,
+    updateDeploymentStatus,
+    simulateDeployment
 }

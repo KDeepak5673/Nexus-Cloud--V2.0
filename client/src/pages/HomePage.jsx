@@ -1,6 +1,7 @@
 import HeroSection from '../components/HeroSection';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useState, useEffect } from 'react';
+import { getAnalytics } from '../lib/api';
 
 function HomePage() {
     const { user } = useAuth();
@@ -13,8 +14,7 @@ function HomePage() {
 
     const fetchAnalytics = async () => {
         try {
-            const response = await fetch('http://localhost:9000/api/analytics');
-            const data = await response.json();
+            const data = await getAnalytics();
 
             if (data.status === 'success') {
                 setAnalytics(data.data);

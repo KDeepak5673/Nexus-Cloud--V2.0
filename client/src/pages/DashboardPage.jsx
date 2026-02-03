@@ -368,12 +368,12 @@ function DashboardPage() {
           </div>
 
           <div className="projects-grid-modern">
-            {(showAllProjects ? projects : projects.slice(0, 4)).map((project, index) => (
+            {(showAllProjects ? projects : projects.slice(0, 6)).map((project, index) => (
               <ProjectCard key={index} {...project} />
             ))}
           </div>
 
-          {projects.length > 4 && (
+          {projects.length > 6 && (
             <div className="show-more-container">
               <button
                 className="btn-modern btn-outline"
@@ -386,7 +386,7 @@ function DashboardPage() {
                   </>
                 ) : (
                   <>
-                    <span>Show More ({projects.length - 4} more)</span>
+                    <span>Show More ({projects.length - 6} more)</span>
                     <span className="btn-icon">↓</span>
                   </>
                 )}
