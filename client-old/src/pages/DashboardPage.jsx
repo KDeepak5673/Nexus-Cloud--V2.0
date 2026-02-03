@@ -126,28 +126,24 @@ function DashboardPage() {
 
   const stats = [
     {
-      icon: "🚀",
       title: "Total Projects",
       value: projects.length,
-      color: "#4A90E2"
+      color: "#000000"
     },
     {
-      icon: "✅",
       title: "Active Deployments",
       value: deployments.filter(d => d.status === "ready").length,
-      color: "#22C55E"
+      color: "#1F2937"
     },
     {
-      icon: "⏳",
       title: "In Progress",
       value: deployments.filter(d => d.status === "prog" || d.status === "queue").length,
-      color: "#F59E0B"
+      color: "#6B7280"
     },
     {
-      icon: "❌",
       title: "Failed",
       value: deployments.filter(d => d.status === "fail").length,
-      color: "#EF4444"
+      color: "#9CA3AF"
     }
   ]
 
@@ -219,7 +215,6 @@ function DashboardPage() {
           <div className="stats-grid">
             {stats.map((stat, index) => (
               <div key={index} className="stat-card" style={{ '--delay': `${index * 0.1}s`, '--color': stat.color }}>
-                <div className="stat-icon">{stat.icon}</div>
                 <div className="stat-content">
                   <h3>{stat.value}</h3>
                   <p>{stat.title}</p>
@@ -253,7 +248,7 @@ function DashboardPage() {
                       cy="100"
                       r="80"
                       fill="none"
-                      stroke="#22C55E"
+                      stroke="#1F2937"
                       strokeWidth="20"
                       strokeDasharray={`${(stats[1].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
                       strokeDashoffset="125.66"
@@ -266,7 +261,7 @@ function DashboardPage() {
                       cy="100"
                       r="80"
                       fill="none"
-                      stroke="#F59E0B"
+                      stroke="#6B7280"
                       strokeWidth="20"
                       strokeDasharray={`${(stats[2].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[2].value / Math.max(deployments.length, 1)) * 502.65}`}
                       strokeDashoffset={`${125.66 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
@@ -279,7 +274,7 @@ function DashboardPage() {
                       cy="100"
                       r="80"
                       fill="none"
-                      stroke="#EF4444"
+                      stroke="#9CA3AF"
                       strokeWidth="20"
                       strokeDasharray={`${(stats[3].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[3].value / Math.max(deployments.length, 1)) * 502.65}`}
                       strokeDashoffset={`${125.66 - ((stats[1].value + stats[2].value) / Math.max(deployments.length, 1)) * 502.65}`}
@@ -294,15 +289,15 @@ function DashboardPage() {
                 </div>
                 <div className="chart-legend">
                   <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#22C55E' }}></span>
+                    <span className="legend-color" style={{ backgroundColor: '#1F2937' }}></span>
                     <span>Active ({stats[1].value})</span>
                   </div>
                   <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#F59E0B' }}></span>
+                    <span className="legend-color" style={{ backgroundColor: '#6B7280' }}></span>
                     <span>In Progress ({stats[2].value})</span>
                   </div>
                   <div className="legend-item">
-                    <span className="legend-color" style={{ backgroundColor: '#EF4444' }}></span>
+                    <span className="legend-color" style={{ backgroundColor: '#9CA3AF' }}></span>
                     <span>Failed ({stats[3].value})</span>
                   </div>
                 </div>
@@ -331,7 +326,7 @@ function DashboardPage() {
                               className="bar"
                               style={{
                                 height: dayData.count === 0 ? '4px' : `${Math.max(barHeight, 12)}px`,
-                                backgroundColor: isToday ? '#4A90E2' : (dayData.count > 0 ? '#10b981' : '#e2e8f0'),
+                                backgroundColor: isToday ? '#000000' : (dayData.count > 0 ? '#6B7280' : '#e2e8f0'),
                                 opacity: dayData.count === 0 ? 0.3 : 1
                               }}
                               title={`${dayData.count} deployment${dayData.count !== 1 ? 's' : ''} on ${dayData.date.toLocaleDateString()}`}

@@ -1,12 +1,12 @@
 /* Dashboard Modern Styles */
 .dashboard-modern {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%);
 }
 
 /* Dashboard Header Section */
 .dashboard-header-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #000000;
     padding: 4rem 2rem 3rem;
     color: white;
     position: relative;
@@ -35,7 +35,7 @@
     font-size: 3rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    color: #FFFFFF;
 }
 
 .dashboard-welcome p {
@@ -85,7 +85,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: var(--color, #4A90E2);
+    background: #000000;
     transform: scaleX(0);
     transition: transform 0.4s ease;
     transform-origin: left;
@@ -107,20 +107,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--color, #4A90E2), rgba(var(--color, #4A90E2), 0.8));
+    background: #000000;
+    color: #FFFFFF;
     border-radius: 50%;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-content h3 {
     font-size: 2rem;
     font-weight: 700;
-    color: #1a2a3a;
+    color: #000000;
     margin-bottom: 0.5rem;
 }
 
 .stat-content p {
-    color: #64748b;
+    color: #6B7280;
     font-size: 1rem;
     margin: 0;
 }
@@ -164,12 +165,12 @@
 .chart-header h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #1a2a3a;
+    color: #000000;
     margin-bottom: 0.5rem;
 }
 
 .chart-header p {
-    color: #64748b;
+    color: #6B7280;
     font-size: 0.9rem;
     margin: 0;
 }
@@ -211,14 +212,14 @@
     display: block;
     font-size: 2rem;
     font-weight: 700;
-    color: #1a2a3a;
+    color: #000000;
     line-height: 1;
 }
 
 .donut-label {
     display: block;
     font-size: 0.9rem;
-    color: #64748b;
+    color: #6B7280;
     margin-top: 0.25rem;
 }
 
@@ -234,7 +235,7 @@
     align-items: center;
     gap: 0.75rem;
     font-size: 0.9rem;
-    color: #64748b;
+    color: #6B7280;
 }
 
 .legend-color {
@@ -273,7 +274,7 @@
 
 .bar {
     width: 100%;
-    background: #e2e8f0;
+    background: #E5E7EB;
     border-radius: 4px 4px 0 0;
     transition: all 0.3s ease;
     position: relative;
@@ -303,14 +304,13 @@
 .bar-value {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: #000000;
 }
 
 .bar-label {
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: #64748b;
+    color: #6B7280;
     text-align: center;
     font-weight: 500;
 }
@@ -331,16 +331,12 @@
 .header-content h2 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #1a2a3a;
+    color: #000000;
     margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, #4A90E2, #2E86AB);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .header-content p {
-    color: #64748b;
+    color: #6B7280;
     font-size: 1.1rem;
     margin: 0;
 }
@@ -367,16 +363,12 @@
 .section-header-simple h2 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #1a2a3a;
+    color: #000000;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #4A90E2, #2E86AB);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .section-header-simple p {
-    color: #64748b;
+    color: #6B7280;
     font-size: 1.1rem;
     max-width: 600px;
     margin: 0 auto;

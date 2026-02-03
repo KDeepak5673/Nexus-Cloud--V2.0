@@ -288,16 +288,12 @@ function NewProjectPage() {
         .page-header h1 {
           font-size: 2.5rem;
           font-weight: 700;
-          color: #1a2a3a;
+          color: #000000;
           margin-bottom: 0.5rem;
-          background: linear-gradient(135deg, #4A90E2, #2E86AB);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
         }
 
         .page-header p {
-          color: #64748b;
+          color: #6B7280;
           font-size: 1.1rem;
         }
 
@@ -324,19 +320,19 @@ function NewProjectPage() {
 
         .form-group label {
           font-weight: 600;
-          color: #1a2a3a;
+          color: #000000;
           display: flex;
           align-items: center;
           gap: 0.25rem;
         }
 
         .required {
-          color: #ef4444;
+          color: #000000;
         }
 
         .form-input {
           padding: 0.75rem;
-          border: 2px solid #e2e8f0;
+          border: 2px solid #E5E7EB;
           border-radius: 8px;
           font-size: 1rem;
           transition: border-color 0.2s ease;
@@ -344,13 +340,13 @@ function NewProjectPage() {
 
         .form-input:focus {
           outline: none;
-          border-color: #4A90E2;
-          box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+          border-color: #000000;
+          box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
 
         .input-hint {
           font-size: 0.875rem;
-          color: #64748b;
+          color: #6B7280;
         }
 
         .error-message {
@@ -358,10 +354,10 @@ function NewProjectPage() {
           align-items: center;
           gap: 0.5rem;
           padding: 0.75rem;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
+          background: #F3F4F6;
+          border: 1px solid #E5E7EB;
           border-radius: 8px;
-          color: #dc2626;
+          color: #000000;
           margin-bottom: 1rem;
         }
 
@@ -395,7 +391,7 @@ function NewProjectPage() {
 
         .card-header h3 {
           margin: 0;
-          color: #1a2a3a;
+          color: #000000;
           font-size: 1.25rem;
           font-weight: 600;
         }
@@ -408,18 +404,20 @@ function NewProjectPage() {
         }
 
         .status-badge.building {
-          background: #fef3c7;
-          color: #d97706;
+          background: #F3F4F6;
+          color: #4B5563;
+          border: 1px solid #E5E7EB;
         }
 
         .status-badge.deployed-successfully {
-          background: #d1fae5;
-          color: #059669;
+          background: #000000;
+          color: #FFFFFF;
         }
 
         .status-badge.deployment-failed {
-          background: #fee2e2;
-          color: #dc2626;
+          background: #FFFFFF;
+          color: #000000;
+          border: 1px solid #000000;
         }
 
         .url-container {
@@ -437,19 +435,19 @@ function NewProjectPage() {
         }
 
         .deployment-link {
-          color: #4A90E2;
-          text-decoration: none;
+          color: #000000;
+          text-decoration: underline;
           font-weight: 500;
         }
 
         .deployment-link:hover {
-          text-decoration: underline;
+          text-decoration: none;
         }
 
         .copy-btn {
           padding: 0.75rem;
-          background: #4A90E2;
-          color: white;
+          background: #000000;
+          color: #FFFFFF;
           border: none;
           border-radius: 8px;
           cursor: pointer;
@@ -457,12 +455,12 @@ function NewProjectPage() {
         }
 
         .copy-btn:hover {
-          background: #2E86AB;
+          background: #374151;
         }
 
         .url-hint {
           font-size: 0.875rem;
-          color: #64748b;
+          color: #6B7280;
         }
 
         .logs-info {
@@ -473,13 +471,13 @@ function NewProjectPage() {
 
         .log-count {
           font-size: 0.875rem;
-          color: #64748b;
+          color: #6B7280;
         }
 
         .clear-logs-btn {
           padding: 0.25rem 0.5rem;
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
+          background: #F3F4F6;
+          border: 1px solid #E5E7EB;
           border-radius: 6px;
           font-size: 0.75rem;
           cursor: pointer;
@@ -487,11 +485,11 @@ function NewProjectPage() {
         }
 
         .clear-logs-btn:hover {
-          background: #e2e8f0;
+          background: #E5E7EB;
         }
 
         .logs-container {
-          background: #1a1a1a;
+          background: #000000;
           border-radius: 8px;
           padding: 1rem;
           max-height: 400px;
@@ -508,13 +506,13 @@ function NewProjectPage() {
         }
 
         .log-timestamp {
-          color: #64748b;
+          color: #9CA3AF;
           flex-shrink: 0;
           min-width: 90px;
         }
 
         .log-content {
-          color: #e2e8f0;
+          color: #E5E7EB;
           flex: 1;
         }
 
@@ -524,7 +522,7 @@ function NewProjectPage() {
         }
 
         .logs-footer small {
-          color: #64748b;
+          color: #6B7280;
         }
 
         @keyframes spin {

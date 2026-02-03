@@ -147,11 +147,11 @@ function ProjectDetailsPage({ projectId }) {
 
     const getStatusColor = (status) => {
         const statusColors = {
-            'READY': '#22c55e',
-            'IN_PROGRESS': '#f59e0b',
-            'QUEUED': '#6b7280',
-            'FAIL': '#ef4444',
-            'NOT_STARTED': '#9ca3af'
+            'READY': '#1F2937',
+            'IN_PROGRESS': '#6b7280',
+            'QUEUED': '#9ca3af',
+            'FAIL': '#D1D5DB',
+            'NOT_STARTED': '#E5E7EB'
         }
         return statusColors[status] || '#6b7280'
     }
@@ -255,7 +255,7 @@ function ProjectDetailsPage({ projectId }) {
                 {/* Deployment URL Card */}
                 <div className="deployment-url-card">
                     <div className="card-header">
-                        <h3>🌐 Live Deployment</h3>
+                        <h3>Live Deployment</h3>
                         <div className={`status-badge ${project.Deployement?.[0]?.status?.toLowerCase().replace(/[^a-z]/g, '-') || 'not-started'}`}>
                             {project.Deployement?.[0]?.status || 'NOT_STARTED'}
                         </div>
@@ -276,7 +276,7 @@ function ProjectDetailsPage({ projectId }) {
                             onClick={() => copyToClipboard(deploymentUrl)}
                             title="Copy URL"
                         >
-                            📋
+                            Copy
                         </button>
                     </div>
                     <div className="url-hint">
@@ -290,7 +290,7 @@ function ProjectDetailsPage({ projectId }) {
                 <div className="project-content">
                     {/* Deployments List */}
                     <div className="deployments-section">
-                        <h3>📦 Deployment History</h3>
+                        <h3>Deployment History</h3>
                         <div className="deployments-list">
                             {deployments.length > 0 ? (
                                 deployments.map((deployment) => (
@@ -322,7 +322,7 @@ function ProjectDetailsPage({ projectId }) {
                     {/* Logs Section */}
                     <div className="logs-section">
                         <div className="logs-header">
-                            <h3>📋 Deployment Logs</h3>
+                            <h3>Deployment Logs</h3>
                             {selectedDeployment && (
                                 <div className="selected-deployment-info">
                                     <div className="deployment-info-details">
@@ -349,23 +349,23 @@ function ProjectDetailsPage({ projectId }) {
                                                 onClick={handleRetryDeployment}
                                                 title="Start a new deployment"
                                             >
-                                                🔄 Retry Deploy
+                                                Retry Deploy
                                             </button>
                                         )}
                                     </div>
                                     {selectedDeployment.status === 'FAIL' && (
                                         <div className="failure-message">
-                                            ⚠️ This deployment failed. Check the logs below for details.
+                                            This deployment failed. Check the logs below for details.
                                         </div>
                                     )}
                                     {selectedDeployment.status === 'IN_PROGRESS' && (
                                         <div className="progress-message">
-                                            🚀 Deployment is currently in progress. Logs will update automatically.
+                                            Deployment is currently in progress. Logs will update automatically.
                                         </div>
                                     )}
                                     {selectedDeployment.status === 'QUEUED' && (
                                         <div className="queued-message">
-                                            ⏳ Deployment is queued and will start shortly.
+                                            Deployment is queued and will start shortly.
                                         </div>
                                     )}
                                 </div>

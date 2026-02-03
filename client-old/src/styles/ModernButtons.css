@@ -15,37 +15,37 @@
 }
 
 .btn-modern.btn-primary {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #1a2a3a;
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    background: #000000;
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-modern.btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(255, 215, 0, 0.6);
+    background: #374151;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btn-modern.btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
+    background: #F3F4F6;
+    color: #000000;
+    border: 2px solid #E5E7EB;
 }
 
 .btn-modern.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #E5E7EB;
     transform: translateY(-3px);
 }
 
 .btn-modern.btn-outline {
     background: transparent;
-    color: #4A90E2;
-    border: 2px solid #4A90E2;
+    color: #000000;
+    border: 2px solid #000000;
 }
 
 .btn-modern.btn-outline:hover {
-    background: #4A90E2;
-    color: white;
+    background: #000000;
+    color: #FFFFFF;
     transform: translateY(-2px);
 }
 

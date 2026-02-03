@@ -35,9 +35,10 @@ function AuthButtons() {
         }}
         style={{
           fontSize: 14,
-          color: 'inherit',
+          color: '#FFFFFF',
           textDecoration: 'none',
-          transition: 'opacity 0.2s'
+          transition: 'opacity 0.2s',
+          fontWeight: 500
         }}
         onMouseEnter={(e) => e.target.style.opacity = '0.8'}
         onMouseLeave={(e) => e.target.style.opacity = '1'}

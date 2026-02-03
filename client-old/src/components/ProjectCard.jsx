@@ -52,11 +52,11 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
     const getStatusColor = (status) => {
         const statusColors = {
-            'READY': '#22c55e',
-            'IN_PROGRESS': '#f59e0b',
-            'QUEUED': '#6366f1',
-            'FAIL': '#ef4444',
-            'NOT_STARTED': '#9ca3af'
+            'READY': '#1F2937',
+            'IN_PROGRESS': '#6B7280',
+            'QUEUED': '#9CA3AF',
+            'FAIL': '#D1D5DB',
+            'NOT_STARTED': '#E5E7EB'
         }
         return statusColors[status] || '#6b7280'
     };
@@ -112,7 +112,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
             {subDomain && isLive && (
                 <div className="deployment-url">
-                    🌐 <a href={projectUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={projectUrl} target="_blank" rel="noopener noreferrer">
                         {displayUrl}
                     </a>
                     <span className="live-indicator">● LIVE</span>
@@ -121,14 +121,14 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
             {subDomain && !isLive && (
                 <div className="deployment-url inactive">
-                    🌐 {displayUrl}
+                    {displayUrl}
                     <span className="inactive-indicator">● OFFLINE</span>
                 </div>
             )}
 
             {isFailed && (
                 <div className="failure-notice">
-                    ⚠️ Deployment failed. Check logs for details.
+                    Deployment failed. Check logs for details.
                 </div>
             )}
 
@@ -138,7 +138,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                     onClick={handleViewLogs}
                     title="View deployment logs"
                 >
-                    📋 View Logs
+                    View Logs
                 </button>
 
                 {isFailed && (
@@ -147,7 +147,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                         onClick={handleRetryDeployment}
                         title="Retry failed deployment"
                     >
-                        🔄 Retry Deploy
+                        Retry Deploy
                     </button>
                 )}
             </div>
@@ -217,8 +217,8 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .environment-badge {
-                    background: #f0f8ff;
-                    color: #4A90E2;
+                    background: #F9FAFB;
+                    color: #1F2937;
                     padding: 0.25rem 0.75rem;
                     border-radius: 12px;
                     font-size: 0.75rem;
@@ -232,19 +232,19 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .deployment-url {
-                    background: #f0f9ff;
+                    background: #F9FAFB;
                     padding: 0.75rem;
                     border-radius: 8px;
                     font-size: 0.875rem;
-                    color: #0369a1;
-                    border: 1px solid #bae6fd;
+                    color: #1F2937;
+                    border: 1px solid #E5E7EB;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 }
 
                 .deployment-url a {
-                    color: #0369a1;
+                    color: #000000;
                     text-decoration: none;
                     font-weight: 500;
                 }
@@ -260,7 +260,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .live-indicator {
-                    color: #22c55e;
+                    color: #000000;
                     font-size: 0.75rem;
                     font-weight: 600;
                 }
@@ -272,12 +272,12 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .failure-notice {
-                    background: #fef2f2;
-                    color: #dc2626;
+                    background: #F9FAFB;
+                    color: #1F2937;
                     padding: 0.75rem;
                     border-radius: 8px;
                     font-size: 0.875rem;
-                    border: 1px solid #fecaca;
+                    border: 1px solid #E5E7EB;
                 }
 
                 .project-actions {
@@ -305,25 +305,25 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .view-logs-btn {
-                    background: #4A90E2;
+                    background: #000000;
                     color: white;
                 }
 
                 .view-logs-btn:hover {
-                    background: #2E86AB;
+                    background: #1F2937;
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                 }
 
                 .retry-btn {
-                    background: #f59e0b;
+                    background: #6B7280;
                     color: white;
                 }
 
                 .retry-btn:hover {
-                    background: #d97706;
+                    background: #4B5563;
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+                    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
                 }
 
                 .retry-btn:active {

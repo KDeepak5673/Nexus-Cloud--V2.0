@@ -1,7 +1,7 @@
 /* Hero Section Styles */
 .hero-modern {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -38,7 +38,7 @@
 
 .shape {
     position: absolute;
-    background: rgba(255, 255, 255, 0.1);
+    background: #E5E7EB;
     border-radius: 50%;
     animation: float 20s infinite ease-in-out;
 }
@@ -91,7 +91,7 @@
 
 .hero-content {
     text-align: center;
-    color: white;
+    color: #000000;
     z-index: 2;
     position: relative;
     max-width: 800px;
@@ -137,7 +137,7 @@
     width: 4rem;
     height: 4rem;
     object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     border-radius: 8px;
 }
 
@@ -145,7 +145,7 @@
     font-size: 4rem;
     font-weight: 700;
     margin: 0;
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    color: #000000;
     line-height: 1;
 }
 
@@ -216,8 +216,7 @@
     display: block;
     font-size: 2.5rem;
     font-weight: 700;
-    color: #FFD700;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: #000000;
 }
 
 .stat-label {

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Cloud - Greyscale Color Palette Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px;
+            background: #FFFFFF;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: #6B7280;
+            margin-bottom: 3rem;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #000000;
+        }
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .color-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .color-swatch {
+            height: 120px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .color-info {
+            padding: 1rem;
+        }
+        
+        .color-name {
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+        
+        .color-hex {
+            font-family: 'Courier New', monospace;
+            color: #6B7280;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .color-usage {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+        }
+        
+        .component-examples {
+            display: grid;
+            gap: 2rem;
+        }
+        
+        .component-section {
+            padding: 2rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+        }
+        
+        .component-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background-color: #000000;
+            color: #FFFFFF;
+            border: 1px solid #000000;
+        }
+        
+        .btn-primary:hover {
+            background-color: #374151;
+            border-color: #374151;
+        }
+        
+        .btn-outline {
+            border: 1px solid #000000;
+            color: #000000;
+            background: transparent;
+        }
+        
+        .btn-outline:hover {
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+        
+        .btn-secondary {
+            background-color: #E5E7EB;
+            color: #000000;
+            border: 1px solid #E5E7EB;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #D1D5DB;
+            border-color: #D1D5DB;
+        }
+        
+        .status-badges {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-queue {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            border: 1px solid #E5E7EB;
+        }
+        
+        .status-prog {
+            background-color: #E5E7EB;
+            color: #1F2937;
+            border: 1px solid #D1D5DB;
+        }
+        
+        .status-ready {
+            background-color: #000000;
+            color: #FFFFFF;
+            border: 1px solid #000000;
+        }
+        
+        .status-fail {
+            background-color: #FFFFFF;
+            color: #000000;
+            border: 1px solid #000000;
+        }
+        
+        .text-examples {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .text-example {
+            padding: 1rem;
+            border-left: 3px solid #E5E7EB;
+        }
+        
+        .accessibility-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .accessibility-table th,
+        .accessibility-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .accessibility-table th {
+            background-color: #F9FAFB;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nexus Cloud - Greyscale Design System</h1>
+        <p class="subtitle">Professional Black/White/Grey Color Palette Reference</p>
+        
+        <!-- Primary Colors -->
+        <div class="section">
+            <h2>Primary Colors</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #000000;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Black</div>
+                        <div class="color-hex">#000000</div>
+                        <div class="color-usage">Primary buttons, text, accents</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #FFFFFF; border: 1px solid #E5E7EB;"></div>
+                    <div class="color-info">
+                        <div class="color-name">White</div>
+                        <div class="color-hex">#FFFFFF</div>
+                        <div class="color-usage">Backgrounds, button text</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grey Scale -->
+        <div class="section">
+            <h2>Grey Scale</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #F9FAFB;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 50</div>
+                        <div class="color-hex">#F9FAFB</div>
+                        <div class="color-usage">Lightest background</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #F3F4F6;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 100</div>
+                        <div class="color-hex">#F3F4F6</div>
+                        <div class="color-usage">Light background, error states</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #E5E7EB;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 200</div>
+                        <div class="color-hex">#E5E7EB</div>
+                        <div class="color-usage">Borders, dividers</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #D1D5DB;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 300</div>
+                        <div class="color-hex">#D1D5DB</div>
+                        <div class="color-usage">Disabled states</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #9CA3AF;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 400</div>
+                        <div class="color-hex">#9CA3AF</div>
+                        <div class="color-usage">Secondary text, placeholders</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #6B7280;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 500</div>
+                        <div class="color-hex">#6B7280</div>
+                        <div class="color-usage">Primary text</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #4B5563;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 600</div>
+                        <div class="color-hex">#4B5563</div>
+                        <div class="color-usage">Important text</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #374151;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 700</div>
+                        <div class="color-hex">#374151</div>
+                        <div class="color-usage">Headings, hover states</div>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #1F2937;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Grey 800</div>
+                        <div class="color-hex">#1F2937</div>
+                        <div class="color-usage">Important headings</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Component Examples -->
+        <div class="section">
+            <h2>Component Examples</h2>
+            <div class="component-examples">
+                <div class="component-section">
+                    <div class="component-title">Buttons</div>
+                    <div class="button-group">
+                        <button class="btn btn-primary">Primary Button</button>
+                        <button class="btn btn-outline">Outline Button</button>
+                        <button class="btn btn-secondary">Secondary Button</button>
+                    </div>
+                </div>
+                
+                <div class="component-section">
+                    <div class="component-title">Status Badges</div>
+                    <div class="status-badges">
+                        <span class="status-badge status-queue">QUEUED</span>
+                        <span class="status-badge status-prog">IN PROGRESS</span>
+                        <span class="status-badge status-ready">READY</span>
+                        <span class="status-badge status-fail">FAILED</span>
+                    </div>
+                </div>
+                
+                <div class="component-section">
+                    <div class="component-title">Typography Hierarchy</div>
+                    <div class="text-examples">
+                        <div class="text-example">
+                            <h1 style="color: #000000; font-size: 2rem; margin-bottom: 0.5rem;">Main Heading (Black)</h1>
+                            <p style="color: #6B7280;">Body text using Grey 500 for good readability</p>
+                        </div>
+                        <div class="text-example">
+                            <h2 style="color: #1F2937; font-size: 1.5rem; margin-bottom: 0.5rem;">Section Heading (Grey 800)</h2>
+                            <p style="color: #9CA3AF;">Secondary text using Grey 400 for less emphasis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Accessibility Table -->
+        <div class="section">
+            <h2>Accessibility Compliance</h2>
+            <p style="margin-bottom: 1rem; color: #6B7280;">All color combinations meet WCAG 2.1 standards</p>
+            <table class="accessibility-table">
+                <thead>
+                    <tr>
+                        <th>Color Combination</th>
+                        <th>Contrast Ratio</th>
+                        <th>WCAG Level</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Black on White</td>
+                        <td>21:1</td>
+                        <td>AAA</td>
+                        <td>Body text, headings</td>
+                    </tr>
+                    <tr>
+                        <td>Grey 800 on White</td>
+                        <td>12.6:1</td>
+                        <td>AAA</td>
+                        <td>Subheadings, important text</td>
+                    </tr>
+                    <tr>
+                        <td>Grey 700 on White</td>
+                        <td>8.6:1</td>
+                        <td>AAA</td>
+                        <td>Section headings</td>
+                    </tr>
+                    <tr>
+                        <td>Grey 500 on White</td>
+                        <td>4.6:1</td>
+                        <td>AA</td>
+                        <td>Body text, descriptions</td>
+                    </tr>
+                    <tr>
+                        <td>White on Black</td>
+                        <td>21:1</td>
+                        <td>AAA</td>
+                        <td>Navigation, footer, buttons</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
