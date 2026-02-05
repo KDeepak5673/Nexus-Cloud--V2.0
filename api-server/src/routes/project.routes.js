@@ -20,6 +20,9 @@ router.get('/', requireAuth, projectController.getProjects)
 // GET /projects/:id - Get single project
 router.get('/:id', projectController.getProjectById)
 
+// PATCH /projects/:projectId/config - Update project configuration
+router.patch('/:projectId/config', requireAuth, projectController.updateProjectConfig)
+
 // POST /projects/:projectId/deploy - Deploy a project
 router.post('/:projectId/deploy', requireAuth, deploymentController.deployProject)
 

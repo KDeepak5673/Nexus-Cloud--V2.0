@@ -1,0 +1,397 @@
+/* Project Configuration Card Styles */
+.project-config-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.project-config-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.project-config-card h3 {
+    margin: 0;
+    color: #000000;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+}
+
+.config-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.config-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    gap: 12px;
+}
+
+.config-label {
+    font-weight: 500;
+    color: #374151;
+    min-width: 150px;
+}
+
+.config-value {
+    color: #1F2937;
+    font-family: 'Courier New', monospace;
+    background: #FFFFFF;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #E5E7EB;
+}
+
+.env-vars-preview {
+    color: #6B7280;
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #FFFFFF;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.config-modal {
+    padding: 0;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #E5E7EB;
+    position: sticky;
+    top: 0;
+    background: #FFFFFF;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #000000;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #6B7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.modal-close:hover {
+    background: #F3F4F6;
+    color: #000000;
+}
+
+.modal-content form {
+    padding: 24px;
+}
+
+/* Configuration Sections */
+.config-section {
+    margin-bottom: 32px;
+}
+
+.config-section h3 {
+    margin: 0 0 8px 0;
+    color: #000000;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.config-description {
+    color: #6B7280;
+    font-size: 0.875rem;
+    margin: 0 0 16px 0;
+}
+
+/* Environment Variables */
+.env-vars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.env-var-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.env-key-input,
+.env-value-input {
+    padding: 10px 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+    transition: border-color 0.2s;
+}
+
+.env-key-input {
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.env-key-input:focus,
+.env-value-input:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-remove-env {
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    color: #6B7280;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remove-env:hover {
+    background: #000000;
+    color: #FFFFFF;
+    border-color: #000000;
+}
+
+.btn-add-env {
+    margin-top: 8px;
+    width: 100%;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.label-hint {
+    font-weight: 400;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Configuration Examples */
+.config-examples {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.config-examples summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: #374151;
+    user-select: none;
+    list-style: none;
+}
+
+.config-examples summary::-webkit-details-marker {
+    display: none;
+}
+
+.examples-content {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.example {
+    padding: 12px;
+    background: #FFFFFF;
+    border-radius: 6px;
+    border: 1px solid #E5E7EB;
+}
+
+.example strong {
+    display: block;
+    color: #000000;
+    margin-bottom: 8px;
+}
+
+.example code {
+    background: #F3F4F6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #1F2937;
+    margin: 0 4px;
+}
+
+/* Alerts */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.875rem;
+}
+
+.alert-error {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+.alert-success {
+    background: #F0FDF4;
+    color: #166534;
+    border: 1px solid #86EFAC;
+}
+
+.alert span {
+    font-size: 1.125rem;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #E5E7EB;
+    margin-top: 24px;
+}
+
+.modal-actions .btn {
+    min-width: 120px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .env-var-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-remove-env {
+        width: 100%;
+        height: 40px;
+    }
+
+    .config-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .config-label {
+        min-width: auto;
+        font-weight: 600;
+    }
+
+    .config-value {
+        width: 100%;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-overlay {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: fadeIn 0.3s ease-out;
+}

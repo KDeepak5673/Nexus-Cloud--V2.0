@@ -105,6 +105,13 @@ export async function simulateDeployment(deploymentId) {
     })
 }
 
+export async function updateProjectConfig(projectId, config) {
+    return request(`/projects/${projectId}/config`, {
+        method: 'PATCH',
+        body: JSON.stringify(config)
+    })
+}
+
 export default {
     registerUser,
     getUser,
@@ -121,5 +128,6 @@ export default {
     getAnalytics,
     resolveSubdomain,
     updateDeploymentStatus,
-    simulateDeployment
+    simulateDeployment,
+    updateProjectConfig
 }

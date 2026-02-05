@@ -7,7 +7,7 @@ async function validateGitHubRepository(gitURL) {
 
     // Extract owner and repo from URL
     const gitUrlMatch = gitURL.match(/github\.com\/([^\/]+)\/([^\/]+)/)
-    
+
     if (!gitUrlMatch) {
         const error = new Error('Invalid GitHub repository URL format. Use: https://github.com/owner/repo')
         error.statusCode = 400
@@ -20,7 +20,7 @@ async function validateGitHubRepository(gitURL) {
     // Check if repository exists via GitHub API
     try {
         const response = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`)
-        
+
         if (response.status === 404) {
             const error = new Error(`GitHub repository '${owner}/${cleanRepo}' does not exist or is private`)
             error.statusCode = 400
@@ -36,7 +36,7 @@ async function validateGitHubRepository(gitURL) {
         return { owner, repo: cleanRepo }
     } catch (error) {
         if (error.statusCode) throw error  // Re-throw if already has status code
-        
+
         const apiError = new Error('Failed to validate GitHub repository')
         apiError.statusCode = 400
         throw apiError
@@ -44,18 +44,27 @@ async function validateGitHubRepository(gitURL) {
 }
 
 
-async function createProject(name, gitURL, userId) {
+async function createProject(name, gitURL, userId, config = {}) {
     // Validate GitHub repository first
     await validateGitHubRepository(gitURL)
 
-    // Create project with generated subdomain
+    // Prepare project data with optional configuration
+    const projectData = {
+        name,
+        gitURL,
+        subDomain: generateSlug(),  // Generate random subdomain
+        userId
+    }
+
+    // Add configuration if provided
+    if (config.env !== undefined) projectData.env = config.env
+    if (config.rootDir !== undefined) projectData.rootDir = config.rootDir
+    if (config.buildCommand !== undefined) projectData.buildCommand = config.buildCommand
+    if (config.installCommand !== undefined) projectData.installCommand = config.installCommand
+
+    // Create project with generated subdomain and optional config
     const project = await prisma.project.create({
-        data: {
-            name,
-            gitURL,
-            subDomain: generateSlug(),  // Generate random subdomain
-            userId
-        }
+        data: projectData
     })
 
     return project
@@ -106,9 +115,50 @@ async function getProjectById(projectId) {
     return projectWithUrls
 }
 
+async function updateProjectConfig(projectId, userId, config) {
+    // Verify project exists and user owns it
+    const project = await prisma.project.findUnique({
+        where: { id: projectId }
+    })
+
+    if (!project) {
+        const error = new Error('Project not found')
+        error.statusCode = 404
+        throw error
+    }
+
+    if (project.userId !== userId) {
+        const error = new Error('Access denied')
+        error.statusCode = 403
+        throw error
+    }
+
+    // Prepare update data (only include defined fields)
+    const updateData = {}
+    if (config.env !== undefined) updateData.env = config.env
+    if (config.rootDir !== undefined) updateData.rootDir = config.rootDir
+    if (config.buildCommand !== undefined) updateData.buildCommand = config.buildCommand
+    if (config.installCommand !== undefined) updateData.installCommand = config.installCommand
+
+    // Update project configuration
+    const updatedProject = await prisma.project.update({
+        where: { id: projectId },
+        data: updateData,
+        include: {
+            Deployement: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+            }
+        }
+    })
+
+    return updatedProject
+}
+
 module.exports = {
     validateGitHubRepository,
     createProject,
     getUserProjects,
-    getProjectById
+    getProjectById,
+    updateProjectConfig
 }

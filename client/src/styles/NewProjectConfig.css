@@ -1,0 +1,107 @@
+/* New Project Page - Advanced Configuration Styles */
+
+.advanced-toggle-section {
+    margin: 24px 0;
+    padding: 16px 0;
+    border-top: 1px solid #E5E7EB;
+}
+
+.btn-toggle {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 14px 20px;
+}
+
+.btn-toggle span {
+    font-size: 0.875rem;
+    transition: transform 0.2s;
+}
+
+.toggle-hint {
+    margin: 8px 0 0 0;
+    color: #6B7280;
+    font-size: 0.875rem;
+    padding-left: 4px;
+}
+
+.advanced-config-section {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.advanced-config-section .config-section {
+    margin-bottom: 0;
+}
+
+.advanced-config-section .config-section h3 {
+    color: #000000;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.advanced-config-section .config-description {
+    color: #6B7280;
+    font-size: 0.875rem;
+    margin: 0 0 16px 0;
+}
+
+.advanced-config-section .form-group {
+    margin-bottom: 16px;
+}
+
+.advanced-config-section .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.advanced-config-section .form-input {
+    background: #FFFFFF;
+}
+
+/* Adjust spacing for config sections in new project page */
+.advanced-config-section .env-vars-list {
+    margin-bottom: 0;
+}
+
+.advanced-config-section .btn-add-env {
+    width: 100%;
+}
+
+/* Examples styling in new project context */
+.advanced-config-section .config-examples {
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .advanced-config-section {
+        padding: 16px;
+    }
+
+    .btn-toggle {
+        font-size: 0.875rem;
+        padding: 12px 16px;
+    }
+}
