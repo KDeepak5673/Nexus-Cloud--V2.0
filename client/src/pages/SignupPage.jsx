@@ -6,19 +6,34 @@ function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [photoURL, setPhotoURL] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    
     if (password !== confirm) {
       setError('Passwords do not match')
       return
     }
+    
+    if (password.length < 6) {
+      setError('Password should be at least 6 characters long')
+      return
+    }
+    
     setLoading(true)
     try {
-      await signupWithEmail(email, password)
+      // Pass display name and photo URL to signup
+      await signupWithEmail(
+        email, 
+        password, 
+        displayName.trim() || null,
+        photoURL.trim() || null
+      )
       window.appState.setPage('home')
     } catch (err) {
       setError(err.message || 'Signup failed')
@@ -87,6 +102,18 @@ function SignupPage() {
 
             <form onSubmit={handleSubmit} className="auth-form-wide">
               <div className="form-group-wide">
+                <label htmlFor="displayName">Full Name (Optional)</label>
+                <input
+                  id="displayName"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="form-input-wide"
+                />
+              </div>
+
+              <div className="form-group-wide">
                 <label htmlFor="email">Email address</label>
                 <input
                   id="email"
@@ -106,7 +133,7 @@ function SignupPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create a password"
+                  placeholder="Create a password (min. 6 characters)"
                   required
                   className="form-input-wide"
                 />
@@ -123,6 +150,21 @@ function SignupPage() {
                   required
                   className="form-input-wide"
                 />
+              </div>
+
+              <div className="form-group-wide">
+                <label htmlFor="photoURL">Profile Picture URL (Optional)</label>
+                <input
+                  id="photoURL"
+                  type="url"
+                  value={photoURL}
+                  onChange={(e) => setPhotoURL(e.target.value)}
+                  placeholder="https://example.com/your-photo.jpg"
+                  className="form-input-wide"
+                />
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                  Enter a URL to your profile picture or leave blank for default
+                </small>
               </div>
 
               {error && (
@@ -156,6 +198,7 @@ function SignupPage() {
               className="btn-google-wide"
               onClick={handleGoogleSignup}
               disabled={loading}
+              type="button"
             >
               <svg className="google-icon" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
