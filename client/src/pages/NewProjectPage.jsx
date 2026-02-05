@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import api from '../lib/api'
 import { getProjectUrl, getProjectDisplayUrl } from '../lib/utils.js'
+import '../styles/ProjectConfig.css'
+import '../styles/NewProjectConfig.css'
 
 function NewProjectPage() {
   const [repoUrl, setRepoUrl] = useState('')
@@ -11,6 +13,13 @@ function NewProjectPage() {
   const [deploymentUrl, setDeploymentUrl] = useState('')
   const [deploymentStatus, setDeploymentStatus] = useState('')
 
+  // Configuration state
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [envVars, setEnvVars] = useState([{ key: '', value: '', id: Math.random() }])
+  const [rootDir, setRootDir] = useState('.')
+  const [buildCommand, setBuildCommand] = useState('npm run build')
+  const [installCommand, setInstallCommand] = useState('npm install')
+
   // Helper function to sanitize project name for subdomain
   const sanitizeSubdomain = (name) => {
     if (!name) return '';
@@ -19,6 +28,22 @@ function NewProjectPage() {
       .replace(/[^a-z0-9-]/g, '-')  // Replace invalid chars with hyphens
       .replace(/-+/g, '-')          // Replace multiple hyphens with single hyphen
       .replace(/^-|-$/g, '')        // Remove leading/trailing hyphens
+  }
+
+  const addEnvVar = () => {
+    setEnvVars([...envVars, { key: '', value: '', id: Math.random() }])
+  }
+
+  const removeEnvVar = (id) => {
+    if (envVars.length > 1) {
+      setEnvVars(envVars.filter(env => env.id !== id))
+    }
+  }
+
+  const updateEnvVar = (id, field, value) => {
+    setEnvVars(envVars.map(env =>
+      env.id === id ? { ...env, [field]: value } : env
+    ))
   }
 
   const handleDeploy = async (e) => {
@@ -42,9 +67,27 @@ function NewProjectPage() {
 
     try {
       const name = projectName.trim()
-      console.log('Creating project:', { name, gitURL: repoUrl })
 
-      const res = await api.createProject({ name, gitURL: repoUrl })
+      // Prepare configuration
+      const envObject = {}
+      envVars.forEach(env => {
+        if (env.key.trim()) {
+          envObject[env.key.trim()] = env.value
+        }
+      })
+
+      const projectData = {
+        name,
+        gitURL: repoUrl,
+        env: envObject,
+        rootDir: rootDir.trim(),
+        buildCommand: buildCommand.trim(),
+        installCommand: installCommand.trim()
+      }
+
+      console.log('Creating project:', projectData)
+
+      const res = await api.createProject(projectData)
       if (res && res.status === 'success') {
         const projectId = res.data.project.id
         setLogs(prev => [...prev, `✅ Project created successfully `])
@@ -180,6 +223,145 @@ function NewProjectPage() {
               </div>
             </div>
 
+            {/* Advanced Configuration Toggle */}
+            <div className="advanced-toggle-section">
+              <button
+                type="button"
+                className="btn btn-outline btn-toggle"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <span>{showAdvanced ? '▼' : '▶'}</span>
+                Advanced Configuration (Optional)
+              </button>
+              <p className="toggle-hint">
+                Customize build commands, environment variables, and output directory
+              </p>
+            </div>
+
+            {/* Advanced Configuration Section */}
+            {showAdvanced && (
+              <div className="advanced-config-section">
+                {/* Environment Variables */}
+                <div className="config-section">
+                  <h3>Environment Variables</h3>
+                  <p className="config-description">
+                    Add environment variables that will be available during build
+                  </p>
+
+                  <div className="env-vars-list">
+                    {envVars.map((env, index) => (
+                      <div key={env.id} className="env-var-row">
+                        <input
+                          type="text"
+                          placeholder="KEY"
+                          value={env.key}
+                          onChange={(e) => updateEnvVar(env.id, 'key', e.target.value)}
+                          className="env-key-input"
+                        />
+                        <input
+                          type="text"
+                          placeholder="value"
+                          value={env.value}
+                          onChange={(e) => updateEnvVar(env.id, 'value', e.target.value)}
+                          className="env-value-input"
+                        />
+                        {envVars.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEnvVar(env.id)}
+                            className="btn-remove-env"
+                            title="Remove variable"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addEnvVar}
+                    className="btn btn-outline btn-add-env"
+                    style={{ marginTop: '12px' }}
+                  >
+                    + Add Variable
+                  </button>
+                </div>
+
+                {/* Build Commands */}
+                <div className="config-section" style={{ marginTop: '24px' }}>
+                  <h3>Build Settings</h3>
+
+                  <div className="form-group">
+                    <label htmlFor="rootDir">
+                      Project Root Directory
+                      <span className="label-hint">Folder in your repo where the project code is (e.g., "client", "frontend", or "." for root)</span>
+                    </label>
+                    <input
+                      id="rootDir"
+                      type="text"
+                      value={rootDir}
+                      onChange={(e) => setRootDir(e.target.value)}
+                      placeholder="."
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="installCommand">
+                      Install Command
+                      <span className="label-hint">Command to install dependencies</span>
+                    </label>
+                    <input
+                      id="installCommand"
+                      type="text"
+                      value={installCommand}
+                      onChange={(e) => setInstallCommand(e.target.value)}
+                      placeholder="npm install"
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="buildCommand">
+                      Build Command
+                      <span className="label-hint">Command to build your project</span>
+                    </label>
+                    <input
+                      id="buildCommand"
+                      type="text"
+                      value={buildCommand}
+                      onChange={(e) => setBuildCommand(e.target.value)}
+                      placeholder="npm run build"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Examples */}
+                <div className="config-examples" style={{ marginTop: '16px' }}>
+                  <details>
+                    <summary>📖 Configuration Examples</summary>
+                    <div className="examples-content">
+                      <div className="example">
+                        <strong>React in root folder:</strong>
+                        <code>.</code> → <code>npm install</code> → <code>npm run build</code>
+                      </div>
+                      <div className="example">
+                        <strong>React in client/ folder:</strong>
+                        <code>client</code> → <code>npm install</code> → <code>npm run build</code>
+                      </div>
+                      <div className="example">
+                        <strong>Next.js in frontend/ folder:</strong>
+                        <code>frontend</code> → <code>npm install</code> → <code>npm run build</code>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="error-message">
                 <span className="error-icon">⚠️</span>
@@ -207,7 +389,7 @@ function NewProjectPage() {
           </form>
         </div>
 
-        {/* Deployment URL Section */}
+        {/* Deployment URL Section
         {deploymentUrl && (
           <div className="deployment-url-card">
             <div className="card-header">
@@ -239,7 +421,7 @@ function NewProjectPage() {
               Your project will be available at this URL once deployment is complete
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Enhanced Logs Section */}
         {logs.length > 0 && (

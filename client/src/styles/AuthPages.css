@@ -425,6 +425,60 @@
     padding: 0 1.5rem;
 }
 
+/* Auth Provider Buttons Grid */
+.auth-providers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+}
+
+.btn-provider-wide {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    background: white;
+    color: #374151;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.btn-provider-wide:hover:not(:disabled) {
+    border-color: #d1d5db;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.btn-provider-wide:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-provider-wide.btn-github {
+    background: #24292e;
+    color: white;
+    border-color: #24292e;
+}
+
+.btn-provider-wide.btn-github:hover:not(:disabled) {
+    background: #1b1f23;
+    border-color: #1b1f23;
+}
+
+.provider-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Legacy Google button - keep for backward compatibility */
 .btn-google-wide {
     width: 100%;
     padding: 1.25rem 1.5rem;
@@ -550,6 +604,16 @@
         font-size: 1rem;
     }
 
+    .btn-provider-wide {
+        padding: 1rem 1.25rem;
+        font-size: 0.95rem;
+    }
+
+    .auth-providers-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
     .auth-brand-showcase h1 {
         font-size: 2rem;
         margin-bottom: 1rem;
@@ -618,6 +682,16 @@
 
     .form-group-wide {
         gap: 0.5rem;
+    }
+
+    .auth-providers-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .btn-provider-wide {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
     }
 
     .auth-footer-wide {

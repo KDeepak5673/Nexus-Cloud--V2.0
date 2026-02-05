@@ -92,6 +92,12 @@ async function createDeployment(projectId, userId) {
 
     console.log(`🚀 New deployment created: ${deployment.id} for project: ${project.name}`)
 
+    // Prepare environment variables for ECS task
+    const projectEnvs = JSON.stringify(project.env || {})
+    const rootDir = project.rootDir || '.'
+    const buildCmd = project.buildCommand || 'npm run build'
+    const installCmd = project.installCommand || 'npm install'
+
     // Spin up ECS container
     const command = new RunTaskCommand({
         cluster: config.CLUSTER,
@@ -112,7 +118,11 @@ async function createDeployment(projectId, userId) {
                     environment: [
                         { name: 'GIT_REPOSITORY__URL', value: project.gitURL },
                         { name: 'PROJECT_ID', value: projectId },
-                        { name: 'DEPLOYEMENT_ID', value: deployment.id }
+                        { name: 'DEPLOYEMENT_ID', value: deployment.id },
+                        { name: 'PROJECT_ENVS', value: projectEnvs },
+                        { name: 'ROOT_DIR', value: rootDir },
+                        { name: 'BUILD_COMMAND', value: buildCmd },
+                        { name: 'INSTALL_COMMAND', value: installCmd }
                     ]
                 }
             ]

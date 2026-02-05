@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { getProject, getLogs } from '../lib/api'
 import { getProjectUrl } from '../lib/utils.js'
+import ProjectConfigModal from '../components/ProjectConfigModal.jsx'
 import '../styles/ProjectDetails.css'
+import '../styles/ProjectConfig.css'
 
 function ProjectDetailsPage({ projectId }) {
     const [project, setProject] = useState(null)
@@ -12,6 +14,7 @@ function ProjectDetailsPage({ projectId }) {
     const [error, setError] = useState('')
     const [logsLoading, setLogsLoading] = useState(false)
     const [refreshInterval, setRefreshInterval] = useState(null)
+    const [showConfigModal, setShowConfigModal] = useState(false)
 
     useEffect(() => {
         if (projectId) {
@@ -287,6 +290,45 @@ function ProjectDetailsPage({ projectId }) {
                     </div>
                 </div>
 
+                {/* Project Configuration Card */}
+                <div className="project-config-card">
+                    <div className="card-header">
+                        <h3>Project Configuration</h3>
+                        <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setShowConfigModal(true)}
+                        >
+                            ⚙️ Edit Configuration
+                        </button>
+                    </div>
+                    <div className="config-summary">
+                        <div className="config-item">
+                            <span className="config-label">Environment Variables:</span>
+                            <span className="config-value">
+                                {Object.keys(project.env || {}).length} variable(s)
+                                {Object.keys(project.env || {}).length > 0 && (
+                                    <span className="env-vars-preview">
+                                        {' '}({Object.keys(project.env).slice(0, 3).join(', ')}
+                                        {Object.keys(project.env).length > 3 && '...'})
+                                    </span>
+                                )}
+                            </span>
+                        </div>
+                        <div className="config-item">
+                            <span className="config-label">Project Root:</span>
+                            <code className="config-value">{project.rootDir || '.'}</code>
+                        </div>
+                        <div className="config-item">
+                            <span className="config-label">Install Command:</span>
+                            <code className="config-value">{project.installCommand || 'npm install'}</code>
+                        </div>
+                        <div className="config-item">
+                            <span className="config-label">Build Command:</span>
+                            <code className="config-value">{project.buildCommand || 'npm run build'}</code>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="project-content">
                     {/* Deployments List */}
                     <div className="deployments-section">
@@ -401,6 +443,18 @@ function ProjectDetailsPage({ projectId }) {
                     </div>
                 </div>
             </div>
+
+            {/* Configuration Modal */}
+            {showConfigModal && (
+                <ProjectConfigModal
+                    project={project}
+                    onClose={() => setShowConfigModal(false)}
+                    onUpdate={(updatedProject) => {
+                        setProject(updatedProject)
+                        fetchProjectDetails() // Refresh to get latest data
+                    }}
+                />
+            )}
         </div>
     )
 }

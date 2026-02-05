@@ -2,16 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { getUserProfile } from '../lib/api.js'
 import { getProjectUrl } from '../lib/utils.js'
+import ImageUpload from '../components/ImageUpload.jsx'
 
 function UserProfilePage() {
-    const { user, logout } = useAuth()
+    const { user, logout, updateProfile } = useAuth()
     const [profileData, setProfileData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [editForm, setEditForm] = useState({
+        displayName: '',
+        photoURL: ''
+    })
+    const [updateLoading, setUpdateLoading] = useState(false)
+    const [updateError, setUpdateError] = useState('')
 
     useEffect(() => {
         if (user?.uid) {
             fetchUserProfile()
+            // Initialize edit form with current user data
+            setEditForm({
+                displayName: user.displayName || '',
+                photoURL: user.photoURL || ''
+            })
         }
     }, [user])
 
@@ -34,6 +47,37 @@ function UserProfilePage() {
             setError('Failed to load profile data')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault()
+        setUpdateError('')
+        setUpdateLoading(true)
+
+        try {
+            const updates = {}
+            if (editForm.displayName.trim()) {
+                updates.displayName = editForm.displayName.trim()
+            }
+            if (editForm.photoURL.trim()) {
+                updates.photoURL = editForm.photoURL.trim()
+            }
+
+            if (Object.keys(updates).length === 0) {
+                setUpdateError('Please provide at least one field to update')
+                setUpdateLoading(false)
+                return
+            }
+
+            await updateProfile(updates)
+            setShowEditModal(false)
+            // Optionally refresh profile data
+            await fetchUserProfile()
+        } catch (err) {
+            setUpdateError(err.message || 'Failed to update profile')
+        } finally {
+            setUpdateLoading(false)
         }
     }
 
@@ -148,20 +192,50 @@ function UserProfilePage() {
                     <div className="profile-info">
                         <div className="profile-avatar">
                             {user.photoURL ? (
-                                <img src={user.photoURL} alt="Profile" className="avatar-image" />
-                            ) : (
-                                <div className="avatar-placeholder">
-                                    {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
-                                </div>
-                            )}
+                                <img
+                                    src={user.photoURL}
+                                    alt={user.displayName || 'Profile'}
+                                    className="avatar-image"
+                                    onError={(e) => {
+                                        // Fallback if image fails to load
+                                        e.target.style.display = 'none'
+                                        e.target.nextSibling.style.display = 'flex'
+                                    }}
+                                />
+                            ) : null}
+                            <div
+                                className="avatar-placeholder"
+                                style={{ display: user.photoURL ? 'none' : 'flex' }}
+                            >
+                                {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                            </div>
                         </div>
                         <div className="profile-details">
-                            <h1>{user.displayName || 'User'}</h1>
-                            <p className="profile-email">{user.email}</p>
+                            <h1>{user.displayName || user.email?.split('@')[0] || 'Anonymous User'}</h1>
+                            <p className="profile-email">{user.email || 'No email provided'}</p>
+                            {user.phoneNumber && (
+                                <p className="profile-phone">{user.phoneNumber}</p>
+                            )}
                             <p className="profile-member">Member since {userStats.memberSince}</p>
+                            {!user.displayName && !user.photoURL && (
+                                <p className="profile-incomplete" style={{
+                                    color: '#f59e0b',
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.5rem'
+                                }}>
+                                    ⚠️ Profile incomplete. Update your profile details.
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="profile-actions">
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setShowEditModal(true)}
+                            style={{ marginRight: '1rem' }}
+                        >
+                            Edit Profile
+                        </button>
                         <button className="btn btn-outline" onClick={logout}>Logout</button>
                     </div>
                 </div>
@@ -285,7 +359,168 @@ function UserProfilePage() {
                 </div>
             </div>
 
+            {/* Edit Profile Modal */}
+            {showEditModal && (
+                <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Edit Profile</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateProfile}>
+                            <div className="form-group">
+                                <label htmlFor="edit-displayName">Display Name</label>
+                                <input
+                                    id="edit-displayName"
+                                    type="text"
+                                    value={editForm.displayName}
+                                    onChange={(e) => setEditForm(prev => ({
+                                        ...prev,
+                                        displayName: e.target.value
+                                    }))}
+                                    placeholder="Enter your name"
+                                    className="form-input"
+                                />
+                            </div>
+                            <ImageUpload
+                                label="Profile Picture"
+                                currentImageUrl={editForm.photoURL}
+                                onUploadComplete={(url) => setEditForm(prev => ({
+                                    ...prev,
+                                    photoURL: url || ''
+                                }))}
+                            />
+                            {updateError && (
+                                <div className="error-message" style={{
+                                    background: '#fee2e2',
+                                    color: '#dc2626',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    marginBottom: '1rem'
+                                }}>
+                                    {updateError}
+                                </div>
+                            )}
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() => setShowEditModal(false)}
+                                    disabled={updateLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={updateLoading}
+                                >
+                                    {updateLoading ? 'Updating...' : 'Update Profile'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                }
+
+                .modal-content {
+                    background: white;
+                    border-radius: 16px;
+                    padding: 2rem;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                }
+
+                .modal-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1.5rem;
+                }
+
+                .modal-header h2 {
+                    margin: 0;
+                    font-size: 1.5rem;
+                }
+
+                .modal-close {
+                    background: none;
+                    border: none;
+                    font-size: 2rem;
+                    cursor: pointer;
+                    color: #6b7280;
+                    line-height: 1;
+                    padding: 0;
+                    width: 32px;
+                    height: 32px;
+                }
+
+                .modal-close:hover {
+                    color: #000;
+                }
+
+                .form-group {
+                    margin-bottom: 1.5rem;
+                }
+
+                .form-group label {
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    font-weight: 600;
+                    color: #374151;
+                }
+
+                .form-input {
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                }
+
+                .form-input:focus {
+                    outline: none;
+                    border-color: #000;
+                }
+
+                .modal-actions {
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: flex-end;
+                    margin-top: 2rem;
+                }
+
+                .btn-secondary {
+                    background: #f3f4f6;
+                    color: #374151;
+                    border: none;
+                }
+
+                .btn-secondary:hover {
+                    background: #e5e7eb;
+                }
+
                 .loading-spinner-large {
                     text-align: center;
                     padding: 4rem 2rem;
