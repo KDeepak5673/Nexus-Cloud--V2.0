@@ -1,22 +1,6 @@
-/**
- * SOCKET.IO CONFIGURATION
- * 
- * Socket.IO enables real-time communication between server and browser.
- * 
- * Use case in your app:
- * - User watches deployment logs in real-time
- * - Logs arrive from Kafka → API emits to Socket.IO → Browser receives instantly
- * 
- * Flow: Kafka → API → Socket.IO → Browser (live logs!)
- */
-
 const { Server } = require('socket.io')
 
-/**
- * Initialize Socket.IO server
- * @param {Object} httpServer - HTTP server instance from Express
- * @returns {Object} Socket.IO server instance
- */
+
 function initializeSocketIO(httpServer) {
     // Create Socket.IO server attached to HTTP server
     const io = new Server(httpServer, {

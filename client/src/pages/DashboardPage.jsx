@@ -3,56 +3,6 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import ProjectCard from '../components/ProjectCard'
 import DeploymentTable from '../components/DeploymentTable'
 import { getProjects, getDeployments } from '../lib/api.js'
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts'
-
-// Metric Card Component
-function MetricCard({ label, value, change, trend, icon }) {
-  const isPositive = trend === 'up'
-  
-  return (
-    <div className="metric-card-modern">
-      <div className="metric-card-header">
-        <div className="metric-icon">{icon}</div>
-        {change && (
-          <div className={`metric-trend ${isPositive ? 'trend-up' : 'trend-down'}`}>
-            {isPositive ? '↑' : '↓'} {change}
-          </div>
-        )}
-      </div>
-      <div className="metric-content">
-        <div className="metric-value">{value}</div>
-        <div className="metric-label">{label}</div>
-      </div>
-    </div>
-  )
-}
-
-// Chart Card Component
-function ChartCard({ title, description, children }) {
-  return (
-    <div className="chart-card-modern">
-      <div className="chart-card-header">
-        <div>
-          <h3 className="chart-title">{title}</h3>
-          <p className="chart-description">{description}</p>
-        </div>
-      </div>
-      <div className="chart-content">
-        {children}
-      </div>
-    </div>
-  )
-}
 
 function DashboardPage() {
   const { user } = useAuth()
@@ -130,38 +80,22 @@ function DashboardPage() {
       const nextDate = new Date(date)
       nextDate.setDate(date.getDate() + 1)
 
+      // Count deployments for this day using the original createdAt timestamp
       const deploymentsOnDay = deployments.filter(deployment => {
         if (!deployment.createdAt) return false
+
         const deploymentDate = new Date(deployment.createdAt)
         return deploymentDate >= date && deploymentDate < nextDate
       }).length
 
       activityData.push({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        deployments: deploymentsOnDay,
-        date: date.toLocaleDateString()
+        date,
+        count: deploymentsOnDay,
+        label: date.toLocaleDateString('en-US', { weekday: 'short' })
       })
     }
 
     return activityData
-  }
-
-  // Get project growth data (last 7 days)
-  const getProjectGrowthData = () => {
-    const growthData = []
-    const today = new Date()
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-      
-      growthData.push({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        projects: Math.floor(Math.random() * 20) + projects.length - 10
-      })
-    }
-
-    return growthData
   }
 
   const getTimeAgo = (dateString) => {
@@ -194,208 +128,253 @@ function DashboardPage() {
     {
       title: "Total Projects",
       value: projects.length,
-      change: "+12%",
-      trend: "up",
-      icon: "📊"
+      color: "#000000"
     },
     {
       title: "Active Deployments",
       value: deployments.filter(d => d.status === "ready").length,
-      change: "+8%",
-      trend: "up",
-      icon: "⚡"
+      color: "#1F2937"
     },
     {
       title: "In Progress",
       value: deployments.filter(d => d.status === "prog" || d.status === "queue").length,
-      change: "-2%",
-      trend: "down",
-      icon: "⏳"
+      color: "#6B7280"
     },
     {
-      title: "Success Rate",
-      value: deployments.length > 0 
-        ? `${Math.round((deployments.filter(d => d.status === "ready").length / deployments.length) * 100)}%`
-        : "0%",
-      change: "+5%",
-      trend: "up",
-      icon: "✓"
+      title: "Failed",
+      value: deployments.filter(d => d.status === "fail").length,
+      color: "#9CA3AF"
     }
   ]
 
-  // Custom tooltip for charts
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="custom-tooltip">
-          <p className="tooltip-label">{label}</p>
-          <p className="tooltip-value">{payload[0].value} {payload[0].name}</p>
-        </div>
-      )
-    }
-    return null
-  }
-
   if (loading) {
     return (
-      <div className="dashboard-modern-container">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading your dashboard...</p>
-        </div>
+      <div className="dashboard-modern">
+        <section className="dashboard-header-section">
+          <div className="container">
+            <div className="dashboard-welcome">
+              <h1>Loading Dashboard...</h1>
+              <p>Fetching your projects and deployments</p>
+            </div>
+          </div>
+        </section>
+        <section className="dashboard-stats-section">
+          <div className="container">
+            <div className="loading-spinner-large">
+              <div className="spinner"></div>
+              <p>Loading data from server...</p>
+            </div>
+          </div>
+        </section>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="dashboard-modern-container">
-        <div className="error-state">
-          <h2>Unable to load dashboard</h2>
-          <p>{error}</p>
-          <button className="btn-modern btn-primary" onClick={fetchDashboardData}>
-            Retry
-          </button>
-        </div>
+      <div className="dashboard-modern">
+        <section className="dashboard-header-section">
+          <div className="container">
+            <div className="dashboard-welcome">
+              <h1>Dashboard Error</h1>
+              <p>{error}</p>
+            </div>
+          </div>
+        </section>
+        <section className="dashboard-stats-section">
+          <div className="container">
+            <div className="error-container">
+              <button
+                className="btn-modern btn-primary"
+                onClick={fetchDashboardData}
+              >
+                Retry Loading
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     )
   }
 
   return (
-    <div className="dashboard-modern-container">
-      {/* Glassmorphism background effects */}
-      <div className="dashboard-background">
-        <div className="bg-blob blob-1"></div>
-        <div className="bg-blob blob-2"></div>
-        <div className="bg-blob blob-3"></div>
-      </div>
-
+    <div className="dashboard-modern">
       {/* Dashboard Header */}
-      <header className="dashboard-modern-header">
-        <div className="dashboard-header-content">
-          <div className="header-badge">
-            <span className="badge-dot"></span>
-            LIVE DASHBOARD
+      <section className="dashboard-header-section">
+        <div className="container">
+          <div className="dashboard-welcome">
+            <h1>Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!</h1>
+            <p>Manage your projects and monitor deployments from your dashboard</p>
           </div>
-          <h1 className="dashboard-title">
-            Welcome back{user?.displayName ? `, ${user.displayName}` : ''}
-          </h1>
-          <p className="dashboard-subtitle">
-            Monitor your projects, track deployments, and analyze performance metrics in real-time
-          </p>
         </div>
-        <div className="header-actions">
-          <button className="btn-icon" title="Download Report">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </button>
-          <button className="btn-icon" title="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 1v6m0 6v6"></path>
-              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
-              <path d="M1 12h6m6 0h6"></path>
-              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
-            </svg>
-          </button>
+      </section>
+
+      {/* Stats Section */}
+      <section className="dashboard-stats-section">
+        <div className="container">
+          <div className="stats-grid">
+            {stats.map((stat, index) => (
+              <div key={index} className="stat-card" style={{ '--delay': `${index * 0.1}s`, '--color': stat.color }}>
+                <div className="stat-content">
+                  <h3>{stat.value}</h3>
+                  <p>{stat.title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Analytics Charts */}
+          <div className="analytics-charts-section">
+            <div className="charts-grid">
+              {/* Deployment Status Chart */}
+              <div className="chart-container">
+                <div className="chart-header">
+                  <h3>Deployment Status Overview</h3>
+                  <p>Current distribution of all deployments</p>
+                </div>
+                <div className="donut-chart">
+                  <svg viewBox="0 0 200 200" className="donut-svg">
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="80"
+                      fill="none"
+                      stroke="#f1f5f9"
+                      strokeWidth="20"
+                    />
+                    {/* Active Deployments */}
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="80"
+                      fill="none"
+                      stroke="#1F2937"
+                      strokeWidth="20"
+                      strokeDasharray={`${(stats[1].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
+                      strokeDashoffset="125.66"
+                      transform="rotate(-90 100 100)"
+                      className="donut-segment"
+                    />
+                    {/* In Progress */}
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="80"
+                      fill="none"
+                      stroke="#6B7280"
+                      strokeWidth="20"
+                      strokeDasharray={`${(stats[2].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[2].value / Math.max(deployments.length, 1)) * 502.65}`}
+                      strokeDashoffset={`${125.66 - (stats[1].value / Math.max(deployments.length, 1)) * 502.65}`}
+                      transform="rotate(-90 100 100)"
+                      className="donut-segment"
+                    />
+                    {/* Failed */}
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="80"
+                      fill="none"
+                      stroke="#9CA3AF"
+                      strokeWidth="20"
+                      strokeDasharray={`${(stats[3].value / Math.max(deployments.length, 1)) * 502.65} ${502.65 - (stats[3].value / Math.max(deployments.length, 1)) * 502.65}`}
+                      strokeDashoffset={`${125.66 - ((stats[1].value + stats[2].value) / Math.max(deployments.length, 1)) * 502.65}`}
+                      transform="rotate(-90 100 100)"
+                      className="donut-segment"
+                    />
+                  </svg>
+                  <div className="donut-center">
+                    <span className="donut-total">{deployments.length}</span>
+                    <span className="donut-label">Total</span>
+                  </div>
+                </div>
+                <div className="chart-legend">
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#1F2937' }}></span>
+                    <span>Active ({stats[1].value})</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#6B7280' }}></span>
+                    <span>In Progress ({stats[2].value})</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#9CA3AF' }}></span>
+                    <span>Failed ({stats[3].value})</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Project Activity Chart */}
+              <div className="chart-container">
+                <div className="chart-header">
+                  <h3>Project Activity</h3>
+                  <p>Recent deployment activity over time</p>
+                </div>
+                <div className="bar-chart">
+                  <div className="bar-chart-grid">
+                    {(() => {
+                      const activityData = getDeploymentActivityData();
+                      const maxCount = Math.max(...activityData.map(d => d.count), 1);
+
+                      return activityData.map((dayData, index) => {
+                        const maxHeight = 120;
+                        const barHeight = dayData.count === 0 ? 0 : (dayData.count / maxCount) * maxHeight;
+                        const isToday = index === 6;
+
+                        return (
+                          <div key={index} className="bar-item">
+                            <div
+                              className="bar"
+                              style={{
+                                height: dayData.count === 0 ? '4px' : `${Math.max(barHeight, 12)}px`,
+                                backgroundColor: isToday ? '#000000' : (dayData.count > 0 ? '#6B7280' : '#e2e8f0'),
+                                opacity: dayData.count === 0 ? 0.3 : 1
+                              }}
+                              title={`${dayData.count} deployment${dayData.count !== 1 ? 's' : ''} on ${dayData.date.toLocaleDateString()}`}
+                            >
+                              <span className="bar-value" style={{ display: dayData.count === 0 ? 'none' : 'block' }}>
+                                {dayData.count}
+                              </span>
+                            </div>
+                            <span className="bar-label">
+                              {dayData.label}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <div className="dashboard-content">
-        {/* Metrics Row */}
-        <div className="metrics-grid">
-          {stats.map((stat, index) => (
-            <MetricCard
-              key={index}
-              label={stat.title}
-              value={stat.value}
-              change={stat.change}
-              trend={stat.trend}
-              icon={stat.icon}
-            />
-          ))}
-        </div>
-
-        {/* Charts Row */}
-        <div className="charts-row">
-          <ChartCard
-            title="DEPLOYMENT ACTIVITY"
-            description="Last 7 days deployment trends"
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getDeploymentActivityData()} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ee7c0b" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#ee7c0b" stopOpacity={0.6} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(238, 124, 11, 0.1)' }} />
-                <Bar dataKey="deployments" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard
-            title="PROJECT GROWTH"
-            description="Weekly project metrics overview"
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={getProjectGrowthData()} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ee7c0b" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="#ee7c0b" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#ee7c0b', strokeOpacity: 0.2 }} />
-                <Line 
-                  type="monotone" 
-                  dataKey="projects" 
-                  stroke="#ee7c0b" 
-                  strokeWidth={3}
-                  dot={{ fill: '#ee7c0b', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  fill="url(#lineGradient)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-
-        {/* Projects Section */}
-        <div className="dashboard-section">
-          <div className="section-header-flex">
-            <div>
-              <h2 className="section-title">Your Projects</h2>
-              <p className="section-subtitle">Manage and monitor all your deployed projects</p>
+      {/* Projects Section */}
+      <section className="dashboard-projects-section">
+        <div className="container">
+          <div className="section-header-modern">
+            <div className="header-content">
+              <h2>Your Projects</h2>
+              <p>All your deployed projects in one place</p>
             </div>
             <button
               className="btn-modern btn-primary"
               onClick={() => window.appState.setPage('new-project')}
             >
               <span>New Project</span>
-              <span className="btn-icon-plus">+</span>
+              <span className="btn-icon">+</span>
             </button>
           </div>
 
           <div className="projects-grid-modern">
-            {(showAllProjects ? projects : projects.slice(0, 4)).map((project, index) => (
+            {(showAllProjects ? projects : projects.slice(0, 6)).map((project, index) => (
               <ProjectCard key={index} {...project} />
             ))}
           </div>
 
-          {projects.length > 4 && (
-            <div className="show-more-section">
+          {projects.length > 6 && (
+            <div className="show-more-container">
               <button
                 className="btn-modern btn-outline"
                 onClick={() => setShowAllProjects(!showAllProjects)}
@@ -403,30 +382,32 @@ function DashboardPage() {
                 {showAllProjects ? (
                   <>
                     <span>Show Less</span>
-                    <span className="btn-arrow">↑</span>
+                    <span className="btn-icon">↑</span>
                   </>
                 ) : (
                   <>
-                    <span>Show All Projects ({projects.length - 4} more)</span>
-                    <span className="btn-arrow">→</span>
+                    <span>Show More ({projects.length - 6} more)</span>
+                    <span className="btn-icon">↓</span>
                   </>
                 )}
               </button>
             </div>
           )}
         </div>
+      </section>
 
-        {/* Deployments Section */}
-        <div className="dashboard-section">
+      {/* Deployments Section */}
+      <section className="dashboard-deployments-section">
+        <div className="container">
           <div className="section-header-simple">
-            <h2 className="section-title">Recent Deployments</h2>
-            <p className="section-subtitle">Track your latest deployment activities and status</p>
+            <h2>Recent Deployments</h2>
+            <p>Monitor your latest deployment activities</p>
           </div>
-          <div className="deployments-table-wrapper">
+          <div className="deployments-table-container">
             <DeploymentTable deployments={deployments} />
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

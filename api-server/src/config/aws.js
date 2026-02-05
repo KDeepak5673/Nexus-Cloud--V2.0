@@ -1,16 +1,3 @@
-/**
- * AWS ECS CONFIGURATION
- * 
- * AWS ECS (Elastic Container Service) runs your build containers.
- * 
- * How it works:
- * 1. User clicks "Deploy" in your frontend
- * 2. Your API creates a new ECS task (container)
- * 3. Container clones GitHub repo, builds project, uploads to S3
- * 4. Container sends logs to Kafka
- * 5. Container exits when done
- */
-
 const { ECSClient } = require('@aws-sdk/client-ecs')
 
 // Create ECS client with AWS credentials

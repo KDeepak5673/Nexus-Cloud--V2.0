@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthChange, logout, signInWithGoogle, signupWithEmail, loginWithEmail } from './firebase'
+import {
+  onAuthChange,
+  logout,
+  signInWithGoogle,
+  signupWithEmail,
+  loginWithEmail,
+  updateUserProfile
+} from './firebase'
 import { registerUser } from '../lib/api'
 
 const AuthContext = createContext({ user: null })
@@ -14,12 +21,20 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         // Register/update user in database
         try {
+          const providerData = firebaseUser.providerData[0] || {}
+          let provider = 'email'
+
+          if (providerData.providerId === 'google.com') {
+            provider = 'google'
+          }
+
           const userData = {
             firebaseUid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email'
+            email: firebaseUser.email || providerData.email,
+            displayName: firebaseUser.displayName || providerData.displayName || 'User',
+            photoURL: firebaseUser.photoURL || providerData.photoURL || null,
+            phoneNumber: firebaseUser.phoneNumber || null,
+            provider: provider
           }
 
           console.log('Registering user in database:', userData)
@@ -52,9 +67,9 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const customSignupWithEmail = async (email, password) => {
+  const customSignupWithEmail = async (email, password, displayName = null, photoURL = null) => {
     try {
-      const user = await signupWithEmail(email, password)
+      const user = await signupWithEmail(email, password, displayName, photoURL)
       console.log('Email signup successful:', user)
       return user
     } catch (error) {
@@ -74,12 +89,24 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const customUpdateProfile = async (updates) => {
+    try {
+      const user = await updateUserProfile(updates)
+      console.log('Profile updated successfully:', user)
+      return user
+    } catch (error) {
+      console.error('Profile update failed:', error)
+      throw error
+    }
+  }
+
   const value = {
     user,
     loading,
     signInWithGoogle: customSignInWithGoogle,
     signupWithEmail: customSignupWithEmail,
     loginWithEmail: customLoginWithEmail,
+    updateProfile: customUpdateProfile,
     logout,
   }
 

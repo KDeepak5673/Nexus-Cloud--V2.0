@@ -6,31 +6,41 @@ async function registerOrUpdateUser(userData) {
     // Define validation schema
     const schema = z.object({
         firebaseUid: z.string(),
-        email: z.string().email(),
-        displayName: z.string().optional(),
-        photoURL: z.string().optional(),
+        email: z.string().email().nullable().optional(),
+        displayName: z.string().nullable().optional(),
+        photoURL: z.string().nullable().optional(),
+        phoneNumber: z.string().nullable().optional(),
         provider: z.string()
     })
 
     // Validate input data
     const validatedData = schema.parse(userData)
 
+    // Remove null values to avoid overwriting existing data with null
+    const cleanedData = Object.fromEntries(
+        Object.entries(validatedData).filter(([_, value]) => value !== null)
+    )
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-        where: { firebaseUid: validatedData.firebaseUid }
+        where: { firebaseUid: cleanedData.firebaseUid }
     })
 
     if (existingUser) {
-        // Update existing user
+        // Update existing user - only update non-null fields
         return await prisma.user.update({
-            where: { firebaseUid: validatedData.firebaseUid },
-            data: validatedData
+            where: { firebaseUid: cleanedData.firebaseUid },
+            data: cleanedData
         })
     }
 
-    // Create new user
+    // Create new user - use default values for missing fields
     return await prisma.user.create({
-        data: validatedData
+        data: {
+            ...cleanedData,
+            displayName: cleanedData.displayName || 'User',
+            email: cleanedData.email || `${cleanedData.firebaseUid}@unknown.com`
+        }
     })
 }
 
