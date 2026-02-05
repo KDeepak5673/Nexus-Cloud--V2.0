@@ -15,7 +15,7 @@ async function registerOrUpdateUser(userData) {
 
     // Validate input data
     const validatedData = schema.parse(userData)
-    
+
     // Remove null values to avoid overwriting existing data with null
     const cleanedData = Object.fromEntries(
         Object.entries(validatedData).filter(([_, value]) => value !== null)

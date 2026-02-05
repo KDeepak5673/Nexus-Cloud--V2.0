@@ -35,7 +35,7 @@ const googleProvider = new GoogleAuthProvider()
 // Helper function to get user-friendly error messages
 export function getFriendlyErrorMessage(error) {
   const errorCode = error.code || ''
-  
+
   const errorMessages = {
     // Auth errors
     'auth/email-already-in-use': 'This email is already registered. Please try logging in instead.',
@@ -63,7 +63,7 @@ export function getFriendlyErrorMessage(error) {
     // GitHub specific
     'auth/github-email-already-in-use': 'Email from GitHub is already in use with another account.',
   }
-  
+
   return errorMessages[errorCode] || error.message || 'An unexpected error occurred. Please try again.'
 }
 
@@ -84,18 +84,18 @@ export async function signInWithGoogle() {
 export async function signupWithEmail(email, password, displayName = null, photoURL = null) {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
-    
+
     // Update profile if displayName or photoURL provided
     if (displayName || photoURL) {
       const updates = {}
       if (displayName) updates.displayName = displayName
       if (photoURL) updates.photoURL = photoURL
-      
+
       await updateProfile(cred.user, updates)
       // Reload to get updated user
       await cred.user.reload()
     }
-    
+
     return auth.currentUser || cred.user
   } catch (err) {
     console.error('Email signup failed', err)
@@ -111,7 +111,7 @@ export async function updateUserProfile(updates) {
     if (!auth.currentUser) {
       throw new Error('No user is currently signed in')
     }
-    
+
     await updateProfile(auth.currentUser, updates)
     await auth.currentUser.reload()
     return auth.currentUser

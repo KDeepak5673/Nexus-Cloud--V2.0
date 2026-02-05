@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { getUserProfile } from '../lib/api.js'
 import { getProjectUrl } from '../lib/utils.js'
+import ImageUpload from '../components/ImageUpload.jsx'
 
 function UserProfilePage() {
     const { user, logout, updateProfile } = useAuth()
@@ -191,9 +192,9 @@ function UserProfilePage() {
                     <div className="profile-info">
                         <div className="profile-avatar">
                             {user.photoURL ? (
-                                <img 
-                                    src={user.photoURL} 
-                                    alt={user.displayName || 'Profile'} 
+                                <img
+                                    src={user.photoURL}
+                                    alt={user.displayName || 'Profile'}
                                     className="avatar-image"
                                     onError={(e) => {
                                         // Fallback if image fails to load
@@ -202,7 +203,7 @@ function UserProfilePage() {
                                     }}
                                 />
                             ) : null}
-                            <div 
+                            <div
                                 className="avatar-placeholder"
                                 style={{ display: user.photoURL ? 'none' : 'flex' }}
                             >
@@ -217,8 +218,8 @@ function UserProfilePage() {
                             )}
                             <p className="profile-member">Member since {userStats.memberSince}</p>
                             {!user.displayName && !user.photoURL && (
-                                <p className="profile-incomplete" style={{ 
-                                    color: '#f59e0b', 
+                                <p className="profile-incomplete" style={{
+                                    color: '#f59e0b',
                                     fontSize: '0.9rem',
                                     marginTop: '0.5rem'
                                 }}>
@@ -228,7 +229,7 @@ function UserProfilePage() {
                         </div>
                     </div>
                     <div className="profile-actions">
-                        <button 
+                        <button
                             className="btn btn-secondary"
                             onClick={() => setShowEditModal(true)}
                             style={{ marginRight: '1rem' }}
@@ -364,7 +365,7 @@ function UserProfilePage() {
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Edit Profile</h2>
-                            <button 
+                            <button
                                 className="modal-close"
                                 onClick={() => setShowEditModal(false)}
                             >
@@ -386,38 +387,14 @@ function UserProfilePage() {
                                     className="form-input"
                                 />
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="edit-photoURL">Profile Picture URL</label>
-                                <input
-                                    id="edit-photoURL"
-                                    type="url"
-                                    value={editForm.photoURL}
-                                    onChange={(e) => setEditForm(prev => ({
-                                        ...prev,
-                                        photoURL: e.target.value
-                                    }))}
-                                    placeholder="https://example.com/photo.jpg"
-                                    className="form-input"
-                                />
-                                {editForm.photoURL && (
-                                    <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                                        <img 
-                                            src={editForm.photoURL} 
-                                            alt="Preview"
-                                            style={{
-                                                width: '80px',
-                                                height: '80px',
-                                                borderRadius: '50%',
-                                                objectFit: 'cover',
-                                                border: '2px solid #e5e7eb'
-                                            }}
-                                            onError={(e) => {
-                                                e.target.style.display = 'none'
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            <ImageUpload
+                                label="Profile Picture"
+                                currentImageUrl={editForm.photoURL}
+                                onUploadComplete={(url) => setEditForm(prev => ({
+                                    ...prev,
+                                    photoURL: url || ''
+                                }))}
+                            />
                             {updateError && (
                                 <div className="error-message" style={{
                                     background: '#fee2e2',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
+import ImageUpload from '../components/ImageUpload.jsx'
 
 function SignupPage() {
   const { signupWithEmail, signInWithGoogle } = useAuth()
@@ -14,23 +15,23 @@ function SignupPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    
+
     if (password !== confirm) {
       setError('Passwords do not match')
       return
     }
-    
+
     if (password.length < 6) {
       setError('Password should be at least 6 characters long')
       return
     }
-    
+
     setLoading(true)
     try {
       // Pass display name and photo URL to signup
       await signupWithEmail(
-        email, 
-        password, 
+        email,
+        password,
         displayName.trim() || null,
         photoURL.trim() || null
       )
@@ -152,20 +153,11 @@ function SignupPage() {
                 />
               </div>
 
-              <div className="form-group-wide">
-                <label htmlFor="photoURL">Profile Picture URL (Optional)</label>
-                <input
-                  id="photoURL"
-                  type="url"
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  placeholder="https://example.com/your-photo.jpg"
-                  className="form-input-wide"
-                />
-                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
-                  Enter a URL to your profile picture or leave blank for default
-                </small>
-              </div>
+              <ImageUpload
+                label="Profile Picture (Optional)"
+                currentImageUrl={photoURL}
+                onUploadComplete={(url) => setPhotoURL(url || '')}
+              />
 
               {error && (
                 <div className="error-message-wide">
