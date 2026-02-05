@@ -52,7 +52,7 @@
 }
 
 .auth-left-section {
-    background: #000000;
+    background: #122a2c;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -217,13 +217,13 @@
 .auth-badge-icon {
     width: 14px;
     height: 14px;
-    color: #000000;
+    color: #122a2c;
 }
 
 .auth-form-header h2 {
     font-size: 2rem;
     font-weight: 700;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 0.5rem;
     line-height: 1.2;
 }
@@ -251,7 +251,7 @@
 .form-group-wide label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 0.25rem;
 }
 
@@ -274,7 +274,7 @@
 }
 
 .forgot-password-link:hover:not(:disabled) {
-    color: #000000;
+    color: #122a2c;
     text-decoration: underline;
 }
 
@@ -289,7 +289,7 @@
 }
 
 .form-input-wide:focus {
-    border-color: #000000;
+    border-color: #122a2c;
     box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
     background: rgba(255, 255, 255, 1);
     transform: translateY(-1px);
@@ -315,8 +315,8 @@
 }
 
 .remember-checkbox:checked {
-    background-color: #000000;
-    border-color: #000000;
+    background-color: #122a2c;
+    border-color: #122a2c;
 }
 
 .remember-label {
@@ -380,7 +380,7 @@
     font-size: 1.1rem;
     font-weight: 600;
     border-radius: 16px;
-    background: #000000;
+    background: #122a2c;
     border: none;
     color: white;
     transition: all 0.3s ease;
@@ -473,7 +473,7 @@
 }
 
 .auth-link-wide {
-    color: #000000;
+    color: #122a2c;
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s ease;

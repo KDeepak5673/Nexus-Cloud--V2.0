@@ -14,7 +14,7 @@
 .features-header h2 {
     font-size: 3rem;
     font-weight: 700;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 1rem;
 }
 
@@ -55,7 +55,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: #000000;
+    background: #122a2c;
     transform: scaleX(0);
     transition: transform 0.4s ease;
     transform-origin: left;
@@ -75,7 +75,7 @@
     margin-bottom: 1.5rem;
     display: inline-block;
     padding: 1rem;
-    background: #000000;
+    background: #122a2c;
     color: #FFFFFF;
     border-radius: 50%;
     width: 80px;

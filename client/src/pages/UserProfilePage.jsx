@@ -202,7 +202,7 @@ function UserProfilePage() {
                                         <div className="project-info">
                                             <h3
                                                 onClick={() => window.appState.setPage('projectDetails', { projectId: project.id })}
-                                                style={{ cursor: 'pointer', color: '#000000' }}
+                                                style={{ cursor: 'pointer', color: '#122a2c' }}
                                             >
                                                 {project.name}
                                             </h3>
@@ -295,7 +295,7 @@ function UserProfilePage() {
                     width: 60px;
                     height: 60px;
                     border: 4px solid #e2e8f0;
-                    border-top: 4px solid #000000;
+                    border-top: 4px solid #122a2c;
                     border-radius: 50%;
                     animation: spin 1s linear infinite;
                     margin: 0 auto 1.5rem;

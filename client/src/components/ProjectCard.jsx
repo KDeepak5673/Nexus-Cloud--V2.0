@@ -244,7 +244,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .deployment-url a {
-                    color: #000000;
+                    color: #122a2c;
                     text-decoration: none;
                     font-weight: 500;
                 }
@@ -260,7 +260,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .live-indicator {
-                    color: #000000;
+                    color: #122a2c;
                     font-size: 0.75rem;
                     font-weight: 600;
                 }
@@ -305,7 +305,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .view-logs-btn {
-                    background: #000000;
+                    background: #122a2c;
                     color: white;
                 }
 

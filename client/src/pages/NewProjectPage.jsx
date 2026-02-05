@@ -288,7 +288,7 @@ function NewProjectPage() {
         .page-header h1 {
           font-size: 2.5rem;
           font-weight: 700;
-          color: #000000;
+          color: #122a2c;
           margin-bottom: 0.5rem;
         }
 
@@ -320,14 +320,14 @@ function NewProjectPage() {
 
         .form-group label {
           font-weight: 600;
-          color: #000000;
+          color: #122a2c;
           display: flex;
           align-items: center;
           gap: 0.25rem;
         }
 
         .required {
-          color: #000000;
+          color: #122a2c;
         }
 
         .form-input {
@@ -340,7 +340,7 @@ function NewProjectPage() {
 
         .form-input:focus {
           outline: none;
-          border-color: #000000;
+          border-color: #122a2c;
           box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
 
@@ -357,7 +357,7 @@ function NewProjectPage() {
           background: #F3F4F6;
           border: 1px solid #E5E7EB;
           border-radius: 8px;
-          color: #000000;
+          color: #122a2c;
           margin-bottom: 1rem;
         }
 
@@ -391,7 +391,7 @@ function NewProjectPage() {
 
         .card-header h3 {
           margin: 0;
-          color: #000000;
+          color: #122a2c;
           font-size: 1.25rem;
           font-weight: 600;
         }
@@ -410,14 +410,14 @@ function NewProjectPage() {
         }
 
         .status-badge.deployed-successfully {
-          background: #000000;
+          background: #122a2c;
           color: #FFFFFF;
         }
 
         .status-badge.deployment-failed {
           background: #FFFFFF;
-          color: #000000;
-          border: 1px solid #000000;
+          color: #122a2c;
+          border: 1px solid #122a2c;
         }
 
         .url-container {
@@ -435,7 +435,7 @@ function NewProjectPage() {
         }
 
         .deployment-link {
-          color: #000000;
+          color: #122a2c;
           text-decoration: underline;
           font-weight: 500;
         }
@@ -446,7 +446,7 @@ function NewProjectPage() {
 
         .copy-btn {
           padding: 0.75rem;
-          background: #000000;
+          background: #122a2c;
           color: #FFFFFF;
           border: none;
           border-radius: 8px;
@@ -489,7 +489,7 @@ function NewProjectPage() {
         }
 
         .logs-container {
-          background: #000000;
+          background: #122a2c;
           border-radius: 8px;
           padding: 1rem;
           max-height: 400px;
