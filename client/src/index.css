@@ -4,7 +4,7 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: #1F2937;
+  color: #122a2c;
   background-color: #FFFFFF;
 
   font-synthesis: none;
@@ -15,12 +15,12 @@
 
 a {
   font-weight: 500;
-  color: #000000;
+  color: #ee7c0b;
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
-  color: #000000;
+  color: #d66e0a;
 }
 
 body {
@@ -43,32 +43,32 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #000000;
+  background-color: #ee7c0b;
   color: #FFFFFF;
   cursor: pointer;
   transition: all 0.25s;
 }
 button:hover {
-  background-color: #374151;
-  border-color: #374151;
+  background-color: #d66e0a;
+  border-color: #d66e0a;
 }
 button:focus,
 button:focus-visible {
-  outline: 2px solid #000000;
+  outline: 2px solid #ee7c0b;
   outline-offset: 2px;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #1F2937;
+    color: #122a2c;
     background-color: #FFFFFF;
   }
   a:hover {
-    color: #000000;
+    color: #d66e0a;
     text-decoration: underline;
   }
   button {
-    background-color: #000000;
+    background-color: #ee7c0b;
     color: #FFFFFF;
   }
 }

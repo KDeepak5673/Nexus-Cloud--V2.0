@@ -6,13 +6,15 @@
 }
 
 /* 
-  GREYSCALE COLOR PALETTE
-  Professional Black/White/Grey Theme
+  PROFESSIONAL ACCENT COLOR PALETTE
+  Accent: #ee7c0b | Dark Primary: #122a2c | Greyscale Foundation
   All colors follow WCAG accessibility standards
 */
 :root {
-  /* Primary Colors */
-  --color-black: #000000;
+  /* Brand Colors */
+  --color-accent: #ee7c0b;         /* Primary accent for CTAs and key highlights */
+  --color-accent-hover: #d66e0a;   /* Darker accent for hover states */
+  --color-dark-primary: #122a2c;   /* Dark primary for headings and important elements */
   --color-white: #FFFFFF;
   
   /* Grey Scale - Light to Dark */
@@ -21,13 +23,13 @@
   --color-grey-200: #E5E7EB;  /* Borders, dividers */
   --color-grey-300: #D1D5DB;  /* Disabled states */
   --color-grey-400: #9CA3AF;  /* Secondary text */
-  --color-grey-500: #6B7280;  /* Primary text */
+  --color-grey-500: #6B7280;  /* Body text */
   --color-grey-600: #4B5563;  /* Important text */
-  --color-grey-700: #374151;  /* Headings */
-  --color-grey-800: #1F2937;  /* Important headings */
+  --color-grey-700: #374151;  /* Subtle headings */
+  --color-grey-800: #1F2937;  /* For secondary elements */
   
-  /* Semantic Colors (greyscale only) */
-  --color-text-primary: var(--color-black);
+  /* Semantic Colors */
+  --color-text-primary: var(--color-dark-primary);
   --color-text-secondary: var(--color-grey-500);
   --color-text-tertiary: var(--color-grey-400);
   
@@ -37,7 +39,7 @@
   
   --color-border-light: var(--color-grey-200);
   --color-border-medium: var(--color-grey-300);
-  --color-border-dark: var(--color-grey-700);
+  --color-border-dark: var(--color-dark-primary);
 }
 
 html,
@@ -74,8 +76,8 @@ body {
 .nav-header {
   position: relative;
   padding: 0;
-  background: var(--color-black);
-  border-bottom: 1px solid var(--color-grey-800);
+  background: var(--color-dark-primary);
+  border-bottom: 1px solid var(--color-dark-primary);
 }
 
 .nav-background {
@@ -216,46 +218,47 @@ body {
 
 .nav-header .btn-outline:hover {
   background: var(--color-white);
-  color: var(--color-black);
+  color: var(--color-dark-primary);
   transform: translateY(-1px);
 }
 
 .nav-header .btn-primary {
-  background: var(--color-white);
-  color: var(--color-black);
-  border: 2px solid var(--color-white);
+  background: var(--color-accent);
+  color: var(--color-white);
+  border: 2px solid var(--color-accent);
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .nav-header .btn-primary:hover {
-  background: var(--color-grey-100);
-  color: var(--color-black);
+  background: var(--color-accent-hover);
+  color: var(--color-white);
   transform: translateY(-1px);
-  border-color: var(--color-grey-100);
+  border-color: var(--color-accent-hover);
 }
 
 /* General button styles (for light backgrounds) */
 .btn-outline {
-  border: 1px solid var(--color-black);
-  color: var(--color-black);
+  border: 1px solid var(--color-grey-200);
+  color: var(--color-dark-primary);
   background: transparent;
 }
 
 .btn-outline:hover {
-  background-color: var(--color-black);
-  color: var(--color-white);
+  background-color: var(--color-grey-100);
+  color: var(--color-dark-primary);
+  border-color: var(--color-grey-300);
 }
 
 .btn-primary {
-  background-color: var(--color-black);
+  background-color: var(--color-accent);
   color: var(--color-white);
-  border: 1px solid var(--color-black);
+  border: 1px solid var(--color-accent);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-grey-700);
-  border-color: var(--color-grey-700);
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 /* Hero Section */
@@ -466,37 +469,38 @@ body {
 }
 
 .btn-modern.btn-primary {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #1a2a3a;
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+  background: #ee7c0b;
+  color: #FFFFFF;
+  box-shadow: 0 8px 25px rgba(238, 124, 11, 0.3);
 }
 
 .btn-modern.btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(255, 215, 0, 0.6);
+  background: #d66e0a;
+  box-shadow: 0 12px 30px rgba(238, 124, 11, 0.4);
 }
 
 .btn-modern.btn-secondary {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
+  background: #F3F4F6;
+  color: #122a2c;
+  border: 2px solid #E5E7EB;
 }
 
 .btn-modern.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #E5E7EB;
   transform: translateY(-3px);
+  border-color: #D1D5DB;
 }
 
 .btn-modern.btn-outline {
   background: transparent;
-  color: #4A90E2;
-  border: 2px solid #4A90E2;
+  color: #122a2c;
+  border: 2px solid #122a2c;
 }
 
 .btn-modern.btn-outline:hover {
-  background: #4A90E2;
-  color: white;
+  background: #122a2c;
+  color: #FFFFFF;
   transform: translateY(-2px);
 }
 
@@ -625,7 +629,7 @@ body {
 .stat-card h3 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #000000;
+  color: #122a2c;
   font-weight: 600;
 }
 
@@ -702,7 +706,7 @@ body {
 /* Footer */
 
 footer {
-  background: #000000;
+  background: #122a2c;
   color: #FFFFFF;
   padding: 1.5rem 2rem 1rem;
   margin-top: auto;
@@ -1213,7 +1217,7 @@ footer {
 .auth-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a2a3a;
+  color: #122a2c;
   margin-bottom: 0.5rem;
   line-height: 1.2;
 }
@@ -1597,7 +1601,7 @@ footer {
 .auth-form-header h2 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a2a3a;
+  color: #122a2c;
   margin-bottom: 0.5rem;
   line-height: 1.2;
 }
@@ -1876,7 +1880,7 @@ footer {
 .features-header h2 {
   font-size: 3rem;
   font-weight: 700;
-  color: #1a2a3a;
+  color: #122a2c;
   margin-bottom: 1rem;
   background: linear-gradient(135deg, #4A90E2, #2E86AB);
   -webkit-background-clip: text;
@@ -1960,7 +1964,7 @@ footer {
 .feature-card h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1a2a3a;
+  color: #122a2c;
   margin-bottom: 1rem;
 }
 

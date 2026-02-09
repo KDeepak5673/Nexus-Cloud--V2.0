@@ -1,7 +1,7 @@
 /* CTA Section Styles */
 .cta-section {
-    padding: 8rem 2rem;
-    background: #000000;
+    padding: 4rem 2rem;
+    background: #122a2c;
     position: relative;
     overflow: hidden;
 }
@@ -20,7 +20,7 @@
 .cta-content {
     text-align: center;
     color: white;
-    max-width: 700px;
+    max-width: 800px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
@@ -28,15 +28,15 @@
 }
 
 .cta-content h2 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: #FFFFFF;
 }
 
 .cta-content p {
-    font-size: 1.25rem;
-    margin-bottom: 3rem;
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
     opacity: 0.9;
     line-height: 1.6;
 }

@@ -169,7 +169,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 .project-card:hover {
                     transform: translateY(-4px);
                     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-                    border-color: #4A90E2;
+                    border-color: #ee7c0b;
                 }
 
                 .project-header {
@@ -181,7 +181,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
 
                 .project-header h3 {
                     margin: 0;
-                    color: #1a2a3a;
+                    color: #122a2c;
                     font-size: 1.25rem;
                     font-weight: 600;
                     flex: 1;
@@ -244,7 +244,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .deployment-url a {
-                    color: #000000;
+                    color: #ee7c0b;
                     text-decoration: none;
                     font-weight: 500;
                 }
@@ -260,7 +260,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .live-indicator {
-                    color: #000000;
+                    color: #ee7c0b;
                     font-size: 0.75rem;
                     font-weight: 600;
                 }
@@ -305,14 +305,14 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 }
 
                 .view-logs-btn {
-                    background: #000000;
+                    background: #ee7c0b;
                     color: white;
                 }
 
                 .view-logs-btn:hover {
-                    background: #1F2937;
+                    background: #d66e0a;
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    box-shadow: 0 4px 12px rgba(238, 124, 11, 0.3);
                 }
 
                 .retry-btn {

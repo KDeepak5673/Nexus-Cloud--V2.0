@@ -17,7 +17,7 @@
 
 .project-config-card h3 {
     margin: 0;
-    color: #000000;
+    color: #122a2c;
     font-size: 1.25rem;
     font-weight: 600;
 }
@@ -106,7 +106,7 @@
 
 .modal-header h2 {
     margin: 0;
-    color: #000000;
+    color: #122a2c;
     font-size: 1.5rem;
     font-weight: 600;
 }
@@ -129,7 +129,7 @@
 
 .modal-close:hover {
     background: #F3F4F6;
-    color: #000000;
+    color: #122a2c;
 }
 
 .modal-content form {
@@ -143,7 +143,7 @@
 
 .config-section h3 {
     margin: 0 0 8px 0;
-    color: #000000;
+    color: #122a2c;
     font-size: 1.125rem;
     font-weight: 600;
 }
@@ -187,7 +187,7 @@
 .env-key-input:focus,
 .env-value-input:focus {
     outline: none;
-    border-color: #000000;
+    border-color: #122a2c;
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -207,9 +207,9 @@
 }
 
 .btn-remove-env:hover {
-    background: #000000;
+    background: #ee7c0b;
     color: #FFFFFF;
-    border-color: #000000;
+    border-color: #122a2c;
 }
 
 .btn-add-env {
@@ -249,7 +249,7 @@
 
 .form-input:focus {
     outline: none;
-    border-color: #000000;
+    border-color: #122a2c;
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -289,7 +289,7 @@
 
 .example strong {
     display: block;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 8px;
 }
 

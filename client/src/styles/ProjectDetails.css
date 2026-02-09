@@ -16,7 +16,7 @@
 .project-title-section h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 0.5rem;
 }
 
@@ -27,12 +27,13 @@
 }
 
 .project-description a {
-    color: #000000;
+    color: #ee7c0b;
     text-decoration: none;
 }
 
 .project-description a:hover {
     text-decoration: underline;
+    color: #d66e0a;
 }
 
 .deployment-url-card {
@@ -55,7 +56,7 @@
 
 .card-header h3 {
     margin: 0;
-    color: #1a2a3a;
+    color: #122a2c;
     font-size: 1.25rem;
     font-weight: 600;
 }
@@ -107,7 +108,7 @@
 }
 
 .deployment-link {
-    color: #000000;
+    color: #ee7c0b;
     text-decoration: none;
     font-weight: 500;
     word-break: break-all;
@@ -115,11 +116,12 @@
 
 .deployment-link:hover {
     text-decoration: underline;
+    color: #d66e0a;
 }
 
 .copy-btn {
     padding: 0.75rem;
-    background: #000000;
+    background: #ee7c0b;
     color: white;
     border: none;
     border-radius: 8px;
@@ -128,7 +130,7 @@
 }
 
 .copy-btn:hover {
-    background: #1F2937;
+    background: #d66e0a;
 }
 
 .url-hint {
@@ -154,7 +156,7 @@
 .deployments-section h3,
 .logs-section h3 {
     margin: 0 0 1.5rem 0;
-    color: #1a2a3a;
+    color: #122a2c;
     font-size: 1.25rem;
     font-weight: 600;
 }
@@ -177,12 +179,12 @@
 }
 
 .deployment-item:hover {
-    border-color: #000000;
+    border-color: #ee7c0b;
     background: #fafbfc;
 }
 
 .deployment-item.selected {
-    border-color: #000000;
+    border-color: #ee7c0b;
     background: #F9FAFB;
 }
 
@@ -194,7 +196,7 @@
 
 .deployment-id {
     font-weight: 600;
-    color: #1a2a3a;
+    color: #122a2c;
 }
 
 .deployment-time {
@@ -235,7 +237,7 @@
 
 .deployment-id {
     font-weight: 600;
-    color: #1a2a3a;
+    color: #122a2c;
 }
 
 .retry-deployment-btn {

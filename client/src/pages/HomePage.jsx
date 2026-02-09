@@ -1,4 +1,4 @@
-import HeroSection from '../components/HeroSection';
+import { GlowyWavesHero } from '../components/GlowyWavesHero';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useState, useEffect } from 'react';
 import { getAnalytics } from '../lib/api';
@@ -43,7 +43,7 @@ function HomePage() {
 
     return (
         <>
-            <HeroSection />
+            <GlowyWavesHero />
 
             <section className="analytics-section">
                 <div className="container">
@@ -58,48 +58,57 @@ function HomePage() {
                             disabled={loading}
                             title="Refresh statistics"
                         >
-                            🔄 Refresh
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="23 4 23 10 17 10" />
+                                <polyline points="1 20 1 14 7 14" />
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                            </svg>
+                            Refresh
                         </button>
-                    </div>                    {loading ? (
-                        <div className="analytics-loading">
-                            <div className="spinner"></div>
-                            <p>Loading platform statistics...</p>
-                        </div>
-                    ) : analytics ? (
-                        <div className="analytics-grid">
-                            <div className="analytics-card primary">
-                                <div className="analytics-icon">👥</div>
-                                <div className="analytics-content">
-                                    <h3>{formatNumber(analytics?.totalUsers)}</h3>
-                                    <p>Total Users</p>
-                                    <span className="analytics-subtitle">Developers using our platform</span>
-                                </div>
+                    </div>
+                    <div className="analytics-grid">
+                        <div className="analytics-card primary">
+                            <div className="analytics-icon-svg">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
                             </div>
-
-                            <div className="analytics-card success">
-                                <div className="analytics-icon">🚀</div>
-                                <div className="analytics-content">
-                                    <h3>{formatNumber(analytics?.totalProjects)}</h3>
-                                    <p>Total Projects</p>
-                                    <span className="analytics-subtitle">{analytics?.activeProjects || 0} actively deployed</span>
-                                </div>
-                            </div>
-
-                            <div className="analytics-card live">
-                                <div className="analytics-icon">🌐</div>
-                                <div className="analytics-content">
-                                    <h3>{formatNumber(analytics?.liveProjects)}</h3>
-                                    <p>Live Projects</p>
-                                    <span className="analytics-subtitle">Currently running deployments</span>
-                                </div>
+                            <div className="analytics-content">
+                                <h3>{loading ? '...' : formatNumber(analytics?.totalUsers)}</h3>
+                                <p>Total Users</p>
+                                <span className="analytics-subtitle">Developers using our platform</span>
                             </div>
                         </div>
-                    ) : (
-                        <div className="analytics-error">
-                            <p>Unable to load platform statistics at this time.</p>
+                        <div className="analytics-card success">
+                            <div className="analytics-icon-svg">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                </svg>
+                            </div>
+                            <div className="analytics-content">
+                                <h3>{loading ? '...' : formatNumber(analytics?.totalProjects)}</h3>
+                                <p>Total Projects</p>
+                                <span className="analytics-subtitle">{analytics?.activeProjects || 0} actively deployed</span>
+                            </div>
                         </div>
-                    )}
-
+                        <div className="analytics-card live">
+                            <div className="analytics-icon-svg">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                            </div>
+                            <div className="analytics-content">
+                                <h3>{loading ? '...' : formatNumber(analytics?.liveProjects)}</h3>
+                                <p>Live Projects</p>
+                                <span className="analytics-subtitle">Currently running deployments</span>
+                            </div>
+                        </div>
+                    </div>
                     <div className="analytics-footer">
                         <p className="analytics-updated">
                             {analytics?.lastUpdated && `Last updated: ${new Date(analytics.lastUpdated).toLocaleString()}`}
@@ -117,6 +126,7 @@ function HomePage() {
                             {!user && (
                                 <button
                                     className="btn-modern btn-primary"
+                                    style={{ background: '#ee7c0b', color: '#fff', borderRadius: '50px', fontWeight: 600 }}
                                     onClick={() => window.appState.setPage('signup')}
                                 >
                                     Get Started Free
@@ -124,6 +134,7 @@ function HomePage() {
                             )}
                             <button
                                 className="btn-modern btn-outline"
+                                style={{ border: '2px solid #122a2c', color: '#122a2c', borderRadius: '50px', fontWeight: 600 }}
                                 onClick={() => window.appState.setPage('docs')}
                             >
                                 Learn More

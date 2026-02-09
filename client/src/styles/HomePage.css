@@ -1,6 +1,6 @@
 /* HomePage Layout Styles */
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 2rem;
 }
@@ -13,7 +13,7 @@ body {
         sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #1a2a3a;
+    color: #122a2c;
     line-height: 1.6;
 }
 

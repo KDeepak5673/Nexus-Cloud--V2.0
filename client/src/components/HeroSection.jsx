@@ -13,7 +13,7 @@ function HeroSection() {
                 <div className="hero-content">
                     <div className="hero-logo-section">
                         <img src="/logo.png" alt="Nexus Cloud" className="hero-logo-icon" />
-                        <h1 className="hero-title">Nexus Cloudddd</h1>
+                        <h1 className="hero-title">Nexus Cloud</h1>
                     </div>
                     <p className="hero-subtitle">Deploy your applications instantly with zero configuration</p>
                     <p className="hero-description">

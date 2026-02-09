@@ -14,7 +14,7 @@
 .features-header h2 {
     font-size: 3rem;
     font-weight: 700;
-    color: #000000;
+    color: #122a2c;
     margin-bottom: 1rem;
 }
 
@@ -55,7 +55,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: #000000;
+    background: #ee7c0b;
     transform: scaleX(0);
     transition: transform 0.4s ease;
     transform-origin: left;
@@ -75,7 +75,7 @@
     margin-bottom: 1.5rem;
     display: inline-block;
     padding: 1rem;
-    background: #000000;
+    background: #ee7c0b;
     color: #FFFFFF;
     border-radius: 50%;
     width: 80px;
@@ -84,7 +84,7 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(238, 124, 11, 0.3);
     transition: transform 0.3s ease;
 }
 
@@ -95,7 +95,7 @@
 .feature-card h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #1a2a3a;
+    color: #122a2c;
     margin-bottom: 1rem;
 }
 
