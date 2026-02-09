@@ -15,6 +15,8 @@ function ProjectDetailsPage({ projectId }) {
     const [logsLoading, setLogsLoading] = useState(false)
     const [refreshInterval, setRefreshInterval] = useState(null)
     const [showConfigModal, setShowConfigModal] = useState(false)
+    const [expandedView, setExpandedView] = useState(false)
+    const [allDeploymentLogs, setAllDeploymentLogs] = useState([])
 
     useEffect(() => {
         if (projectId) {
@@ -114,6 +116,49 @@ function ProjectDetailsPage({ projectId }) {
         } finally {
             setLogsLoading(false)
         }
+    }
+
+    const fetchAllDeploymentLogs = async () => {
+        try {
+            setLogsLoading(true)
+            const allLogs = []
+
+            for (const deployment of deployments) {
+                const response = await getLogs(deployment.id)
+                if (response.logs && response.logs.length > 0) {
+                    // Add deployment info to each log
+                    response.logs.forEach(log => {
+                        allLogs.push({
+                            ...log,
+                            deploymentId: deployment.id,
+                            deploymentDate: deployment.createdAt,
+                            deploymentStatus: deployment.status
+                        })
+                    })
+                }
+            }
+
+            // Sort all logs by timestamp
+            allLogs.sort((a, b) => {
+                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+                return timeA - timeB
+            })
+
+            setAllDeploymentLogs(allLogs)
+        } catch (err) {
+            console.error('Error fetching all deployment logs:', err)
+            setAllDeploymentLogs([])
+        } finally {
+            setLogsLoading(false)
+        }
+    }
+
+    const handleExpandView = async () => {
+        if (!expandedView) {
+            await fetchAllDeploymentLogs()
+        }
+        setExpandedView(!expandedView)
     }
 
     const handleRetryDeployment = async () => {
@@ -329,8 +374,9 @@ function ProjectDetailsPage({ projectId }) {
                     </div>
                 </div>
 
-                <div className="project-content">
+                <div className="project-content" style={{ gridTemplateColumns: expandedView ? '1fr' : '300px 1fr' }}>
                     {/* Deployments List */}
+                    {!expandedView && (
                     <div className="deployments-section">
                         <h3>Deployment History</h3>
                         <div className="deployments-list">
@@ -360,12 +406,21 @@ function ProjectDetailsPage({ projectId }) {
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* Logs Section */}
-                    <div className="logs-section">
+                    <div className="logs-section" style={{ gridColumn: expandedView ? '1' : 'auto' }}>
                         <div className="logs-header">
                             <h3>Deployment Logs</h3>
-                            {selectedDeployment && (
+                            <button
+                                className="btn btn-outline btn-sm"
+                                onClick={handleExpandView}
+                                style={{ marginLeft: 'auto' }}
+                            >
+                                {expandedView ? '� Collapse' : '⛶ Expand'}
+                            </button>
+                        </div>
+                        {!expandedView && selectedDeployment && (
                                 <div className="selected-deployment-info">
                                     <div className="deployment-info-details">
                                         <span className="deployment-id">
@@ -412,34 +467,57 @@ function ProjectDetailsPage({ projectId }) {
                                     )}
                                 </div>
                             )}
-                        </div>
 
-                        <div className="logs-container">
-                            {logsLoading ? (
-                                <div className="logs-loading">
-                                    <div className="spinner"></div>
-                                    <p>Loading logs...</p>
-                                </div>
-                            ) : logs.length > 0 ? (
-                                logs.map((log, idx) => (
-                                    <div key={idx} className="log-entry">
-                                        <span className="log-timestamp">
-                                            [{log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'N/A'}]
-                                        </span>
-                                        <span className="log-content">{log.log}</span>
+                        {!expandedView ? (
+                            <div className="logs-container">
+                                {logsLoading ? (
+                                    <div className="logs-loading">
+                                        <div className="spinner"></div>
+                                        <p>Loading logs...</p>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="no-logs">
-                                    <p>
-                                        {selectedDeployment
-                                            ? 'No logs available for this deployment.'
-                                            : 'Select a deployment to view logs.'
-                                        }
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                                ) : logs.length > 0 ? (
+                                    logs.map((log, idx) => (
+                                        <div key={idx} className="log-entry">
+                                            <span className="log-timestamp">
+                                                [{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}]
+                                            </span>
+                                            <span className="log-content">{log.log}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="no-logs">
+                                        <p>
+                                            {selectedDeployment
+                                                ? 'No logs available for this deployment.'
+                                                : 'Select a deployment to view logs.'
+                                            }
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="logs-container expanded-logs">
+                                {logsLoading ? (
+                                    <div className="logs-loading">
+                                        <div className="spinner"></div>
+                                        <p>Loading all deployment logs...</p>
+                                    </div>
+                                ) : allDeploymentLogs.length > 0 ? (
+                                    allDeploymentLogs.map((log, logIdx) => (
+                                        <div key={logIdx} className="log-entry">
+                                            <span className="log-timestamp">
+                                                [{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}]
+                                            </span>
+                                            <span className="log-content">{log.log}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="no-logs">
+                                        <p>No deployment logs available.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

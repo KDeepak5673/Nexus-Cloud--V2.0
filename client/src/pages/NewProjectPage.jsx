@@ -9,9 +9,14 @@ function NewProjectPage() {
   const [projectName, setProjectName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [logs, setLogs] = useState([])
+  const [logs, setLogs] = useState([]) // Now stores objects with { message, timestamp }
   const [deploymentUrl, setDeploymentUrl] = useState('')
   const [deploymentStatus, setDeploymentStatus] = useState('')
+
+  // Helper to add log with timestamp
+  const addLog = (message) => {
+    setLogs(prev => [...prev, { message, timestamp: new Date().toLocaleTimeString() }])
+  }
 
   // Configuration state
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -63,7 +68,7 @@ function NewProjectPage() {
     }
 
     setLoading(true)
-    setLogs([`🚀 Starting deployment for project: ${projectName}`])
+    setLogs([{ message: `🚀 Starting deployment for project: ${projectName}`, timestamp: new Date().toLocaleTimeString() }])
 
     try {
       const name = projectName.trim()
@@ -90,22 +95,22 @@ function NewProjectPage() {
       const res = await api.createProject(projectData)
       if (res && res.status === 'success') {
         const projectId = res.data.project.id
-        setLogs(prev => [...prev, `✅ Project created successfully `])
+        const actualSubdomain = res.data.project.subDomain // Get actual subdomain from API
+        addLog(`✅ Project created successfully `)
 
         // Start deploy automatically
-        setLogs(prev => [...prev, `📦 Initiating deployment...`])
+        addLog(`📦 Initiating deployment...`)
         const deployRes = await api.deployProject({ projectId })
 
         if (deployRes && deployRes.status === 'queued') {
           const deployId = deployRes.data.deploymentId
           setDeploymentStatus('Building...')
-          setLogs(prev => [...prev, `⏳ Deployment queued with ID: ${deployId}`])
+          addLog(`⏳ Deployment queued with ID: ${deployId}`)
 
-          // Generate deployment URL (this would typically come from your API)
-          const subdomain = sanitizeSubdomain(name)
-          const generatedUrl = getProjectUrl(subdomain)
+          // Use the actual subdomain returned from the API
+          const generatedUrl = getProjectUrl(actualSubdomain)
           setDeploymentUrl(generatedUrl)
-          setLogs(prev => [...prev, `🌐 Deployment URL: ${generatedUrl}`])          // Start polling logs
+          addLog(`🌐 Deployment URL: ${generatedUrl}`)          // Start polling logs
           let attempts = 0
           const maxAttempts = 150 // ~5 minutes
           const interval = setInterval(async () => {
@@ -114,24 +119,26 @@ function NewProjectPage() {
               const logsRes = await api.getLogs(deployId)
               if (logsRes && logsRes.logs) {
                 setLogs(prev => {
-                  const newLines = logsRes.logs.map(r => r.log)
-                  const combined = [...prev, ...newLines]
-                  return Array.from(new Set(combined))
+                  const existingMessages = prev.map(log => log.message)
+                  const newLogs = logsRes.logs
+                    .filter(r => !existingMessages.includes(r.log))
+                    .map(r => ({ message: r.log, timestamp: new Date().toLocaleTimeString() }))
+                  return [...prev, ...newLogs]
                 })
 
                 // Check deployment status
                 const joined = logsRes.logs.map(l => l.log).join('\n')
                 if (/BUILD_FINISHED|DEPLOYMENT_COMPLETE/i.test(joined)) {
                   setDeploymentStatus('Deployed Successfully')
-                  setLogs(prev => [...prev, `🎉 Deployment completed successfully!`])
+                  addLog(`🎉 Deployment completed successfully!`)
                   clearInterval(interval)
                 } else if (/ERROR|FAILED/i.test(joined)) {
                   setDeploymentStatus('Deployment Failed')
-                  setLogs(prev => [...prev, `❌ Deployment failed. Check logs for details.`])
+                  addLog(`❌ Deployment failed. Check logs for details.`)
                   clearInterval(interval)
                 } else if (attempts >= maxAttempts) {
                   setDeploymentStatus('Timeout')
-                  setLogs(prev => [...prev, `⏰ Deployment timeout reached.`])
+                  addLog(`⏰ Deployment timeout reached.`)
                   clearInterval(interval)
                 }
               }
@@ -141,15 +148,15 @@ function NewProjectPage() {
           }, 2000)
         } else {
           setError('Failed to queue deployment')
-          setLogs(prev => [...prev, `❌ Failed to queue deployment`])
+          addLog(`❌ Failed to queue deployment`)
         }
       } else {
         setError((res && res.error) || 'Failed to create project')
-        setLogs(prev => [...prev, `❌ Failed to create project: ${(res && res.error) || 'Unknown error'}`])
+        addLog(`❌ Failed to create project: ${(res && res.error) || 'Unknown error'}`)
       }
     } catch (err) {
       setError(err.message || 'Network error')
-      setLogs(prev => [...prev, `❌ Network error: ${err.message || 'Unknown error'}`])
+      addLog(`❌ Network error: ${err.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -197,7 +204,7 @@ function NewProjectPage() {
                   className="form-input"
                 />
                 <div className="input-hint">
-                  This will be used as your subdomain: <strong>{projectName ? getProjectDisplayUrl(sanitizeSubdomain(projectName)) : 'project-name.localhost:8000'}</strong>
+                  This will be used as your project name.
                 </div>
               </div>
             </div>
@@ -389,7 +396,7 @@ function NewProjectPage() {
           </form>
         </div>
 
-        {/* Deployment URL Section
+        Deployment URL Section
         {deploymentUrl && (
           <div className="deployment-url-card">
             <div className="card-header">
@@ -421,7 +428,7 @@ function NewProjectPage() {
               Your project will be available at this URL once deployment is complete
             </div>
           </div>
-        )} */}
+        )}
 
         {/* Enhanced Logs Section */}
         {logs.length > 0 && (
@@ -440,12 +447,12 @@ function NewProjectPage() {
               </div>
             </div>
             <div className="logs-container">
-              {logs.map((line, idx) => (
+              {logs.map((log, idx) => (
                 <div key={idx} className="log-entry">
                   <span className="log-timestamp">
-                    [{new Date().toLocaleTimeString()}]
+                    [{log.timestamp}]
                   </span>
-                  <span className="log-content">{line}</span>
+                  <span className="log-content">{log.message}</span>
                 </div>
               ))}
             </div>

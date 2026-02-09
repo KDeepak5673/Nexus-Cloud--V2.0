@@ -117,12 +117,12 @@ function HomePage() {
                 </div>
             </section>
 
-            <section className="cta-section">
-                <div className="container">
-                    <div className="cta-content">
-                        <h2>Ready to deploy your next project?</h2>
-                        <p>Join thousands of developers who trust Nexus Cloud for their deployments</p>
-                        <div className="cta-buttons">
+            {/* <section className="cta-section"> */}
+                {/* <div className="container">
+                    <div className="cta-content"> */}
+                        {/* <h2>Ready to deploy your next project?</h2>
+                        <p>Join thousands of developers who trust Nexus Cloud for their deployments</p> */}
+                        {/* <div className="cta-buttons">
                             {!user && (
                                 <button
                                     className="btn-modern btn-primary"
@@ -139,10 +139,10 @@ function HomePage() {
                             >
                                 Learn More
                             </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+                        </div> */}
+                    {/* </div>
+                </div> */}
+            {/* </section> */}
         </>
     );
 }
