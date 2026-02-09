@@ -15,7 +15,7 @@ function Footer() {
           <a href="mailto:nexuscloud@gmail.com">Contact Us</a>
         </div>
         <div className="copyright">
-          <p>&copy; 2025 Nexus Cloud. All rights reserved.</p>
+          <p>&copy; 2026 Nexus Cloud. All rights reserved.</p>
         </div>
       </div>
     </footer>
