@@ -26,13 +26,20 @@ function createApp() {
 
     const corsOptions = {
         origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps, Postman, curl)
+            // Allow requests with no origin (like mobile apps, Postman, curl, server-to-server)
             if (!origin) return callback(null, true)
 
-            if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            // In development, allow all origins
+            if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+                return callback(null, true)
+            }
+
+            // In production, check allowed origins
+            if (allowedOrigins.indexOf(origin) !== -1) {
                 callback(null, true)
             } else {
-                callback(new Error('Not allowed by CORS'))
+                console.warn(`CORS blocked origin: ${origin}`)
+                callback(null, false) // Don't throw error, just deny
             }
         },
         credentials: true,
@@ -42,13 +49,18 @@ function createApp() {
             'Authorization',
             'X-Requested-With',
             'Accept',
-            'Origin'
+            'Origin',
+            'X-Firebase-Uid'
         ],
         exposedHeaders: ['Content-Range', 'X-Content-Range'],
-        maxAge: 86400 // 24 hours
+        maxAge: 86400, // 24 hours
+        optionsSuccessStatus: 204 // Some legacy browsers choke on 204
     }
 
     app.use(cors(corsOptions))
+
+    // Explicit OPTIONS handler for all routes
+    app.options('*', cors(corsOptions))
     app.get('/health', (req, res) => {
         res.json({
             status: 'ok',
