@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import dotenv from 'dotenv'
+import rateLimit from 'express-rate-limit'
 import { createProxyMiddleware } from './proxyMiddleware.js'
 
 dotenv.config()
@@ -21,6 +22,18 @@ console.log('🔧 Client server configuration:')
 console.log(`   PORT:           ${PORT}`)
 console.log(`   API_SERVER_URL: ${API_SERVER_URL}`)
 console.log(`   S3_OUTPUT_BASE: ${S3_OUTPUT_BASE}`)
+
+// ------------------------------------------------------------------
+// Rate limiting — protect all routes from abuse
+// ------------------------------------------------------------------
+const limiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 200,            // max requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+})
+app.use(limiter)
 
 // ------------------------------------------------------------------
 // 1. Subdomain proxy — handles deployed project requests
