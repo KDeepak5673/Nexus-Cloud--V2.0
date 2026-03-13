@@ -3,11 +3,11 @@ const projectService = require('../services/project.service')
 
 async function createProject(req, res, next) {
     try {
-        const { name, gitURL, env, rootDir, buildCommand, installCommand } = req.body
+        const { name, gitURL, env, rootDir, buildCommand, installCommand, framework, packageManager } = req.body
         const userId = req.user.id  // From auth middleware
 
         // Pass configuration to service
-        const config = { env, rootDir, buildCommand, installCommand }
+        const config = { env, rootDir, buildCommand, installCommand, framework, packageManager }
         const project = await projectService.createProject(name, gitURL, userId, config)
 
         return res.json({
@@ -51,13 +51,13 @@ async function getProjectById(req, res, next) {
 async function updateProjectConfig(req, res, next) {
     try {
         const { projectId } = req.params
-        const { env, rootDir, buildCommand, installCommand } = req.body
+        const { env, rootDir, buildCommand, installCommand, framework, packageManager } = req.body
         const userId = req.user.id
 
         const updatedProject = await projectService.updateProjectConfig(
             projectId,
             userId,
-            { env, rootDir, buildCommand, installCommand }
+            { env, rootDir, buildCommand, installCommand, framework, packageManager }
         )
 
         return res.json({

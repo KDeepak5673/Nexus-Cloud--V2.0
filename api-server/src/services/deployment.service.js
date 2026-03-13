@@ -19,6 +19,16 @@ const config = {
     SG: process.env.SG
 }
 
+function normalizeOptionalCommand(value) {
+    if (!value) return null
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+}
+
+function isLegacyDefaultCommand(command, legacyDefault) {
+    return command === legacyDefault
+}
+
 async function validateGitHubRepository(gitURL) {
     console.log(`🔍 Validating GitHub repository: ${gitURL}`)
 
@@ -95,8 +105,33 @@ async function createDeployment(projectId, userId) {
     // Prepare environment variables for ECS task
     const projectEnvs = JSON.stringify(project.env || {})
     const rootDir = project.rootDir || '.'
-    const buildCmd = project.buildCommand || 'npm run build'
-    const installCmd = project.installCommand || 'npm install'
+
+    const normalizedBuildCommand = normalizeOptionalCommand(project.buildCommand)
+    const normalizedInstallCommand = normalizeOptionalCommand(project.installCommand)
+
+    const customBuildCommand = normalizedBuildCommand && !isLegacyDefaultCommand(normalizedBuildCommand, 'npm run build')
+        ? normalizedBuildCommand
+        : null
+
+    const customInstallCommand = normalizedInstallCommand && !isLegacyDefaultCommand(normalizedInstallCommand, 'npm install')
+        ? normalizedInstallCommand
+        : null
+
+    const environment = [
+        { name: 'GIT_REPOSITORY__URL', value: project.gitURL },
+        { name: 'PROJECT_ID', value: projectId },
+        { name: 'DEPLOYEMENT_ID', value: deployment.id },
+        { name: 'PROJECT_ENVS', value: projectEnvs },
+        { name: 'ROOT_DIR', value: rootDir }
+    ]
+
+    if (customBuildCommand) {
+        environment.push({ name: 'BUILD_COMMAND', value: customBuildCommand })
+    }
+
+    if (customInstallCommand) {
+        environment.push({ name: 'INSTALL_COMMAND', value: customInstallCommand })
+    }
 
     // Spin up ECS container
     const command = new RunTaskCommand({
@@ -115,15 +150,7 @@ async function createDeployment(projectId, userId) {
             containerOverrides: [
                 {
                     name: config.CONTAINER_NAME,
-                    environment: [
-                        { name: 'GIT_REPOSITORY__URL', value: project.gitURL },
-                        { name: 'PROJECT_ID', value: projectId },
-                        { name: 'DEPLOYEMENT_ID', value: deployment.id },
-                        { name: 'PROJECT_ENVS', value: projectEnvs },
-                        { name: 'ROOT_DIR', value: rootDir },
-                        { name: 'BUILD_COMMAND', value: buildCmd },
-                        { name: 'INSTALL_COMMAND', value: installCmd }
-                    ]
+                    environment
                 }
             ]
         }

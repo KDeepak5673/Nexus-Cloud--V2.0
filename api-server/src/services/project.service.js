@@ -1,6 +1,103 @@
 const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
 
+const SUPPORTED_FRAMEWORKS = new Set([
+    'auto',
+    'next',
+    'vite',
+    'react',
+    'vue',
+    'angular'
+])
+
+const SUPPORTED_PACKAGE_MANAGERS = new Set(['npm', 'pnpm', 'yarn', 'bun'])
+
+function normalizeText(value) {
+    if (value === undefined || value === null) return undefined
+    const trimmed = String(value).trim()
+    return trimmed.length > 0 ? trimmed : undefined
+}
+
+function normalizeFramework(value) {
+    const normalized = normalizeText(value)?.toLowerCase()
+    if (!normalized) return 'auto'
+    return SUPPORTED_FRAMEWORKS.has(normalized) ? normalized : 'auto'
+}
+
+function normalizePackageManager(value) {
+    const normalized = normalizeText(value)?.toLowerCase()
+    if (!normalized) return 'npm'
+    return SUPPORTED_PACKAGE_MANAGERS.has(normalized) ? normalized : 'npm'
+}
+
+function getCommandsForFrameworkAndPackageManager(framework, packageManager) {
+    if (framework === 'next') {
+        switch (packageManager) {
+            case 'pnpm':
+                return {
+                    installCommand: 'pnpm install --frozen-lockfile',
+                    buildCommand: 'pnpm run build -- --no-lint'
+                }
+            case 'yarn':
+                return {
+                    installCommand: 'yarn install --frozen-lockfile || yarn install',
+                    buildCommand: 'yarn build --no-lint'
+                }
+            case 'bun':
+                return {
+                    installCommand: 'bun install',
+                    buildCommand: 'bun run build -- --no-lint'
+                }
+            case 'npm':
+            default:
+                return {
+                    installCommand: 'npm install',
+                    buildCommand: 'npm run build -- --no-lint'
+                }
+        }
+    }
+
+    switch (packageManager) {
+        case 'pnpm':
+            return {
+                installCommand: 'pnpm install --frozen-lockfile',
+                buildCommand: 'pnpm run build'
+            }
+        case 'yarn':
+            return {
+                installCommand: 'yarn install --frozen-lockfile || yarn install',
+                buildCommand: 'yarn build'
+            }
+        case 'bun':
+            return {
+                installCommand: 'bun install',
+                buildCommand: 'bun run build'
+            }
+        case 'npm':
+        default:
+            return {
+                installCommand: 'npm install',
+                buildCommand: 'npm run build'
+            }
+    }
+}
+
+function resolveProjectCommandConfig(config = {}) {
+    const framework = normalizeFramework(config.framework)
+    const packageManager = normalizePackageManager(config.packageManager)
+    const providedBuildCommand = normalizeText(config.buildCommand)
+    const providedInstallCommand = normalizeText(config.installCommand)
+
+    if (providedBuildCommand || providedInstallCommand || framework === 'auto') {
+        return {
+            buildCommand: providedBuildCommand,
+            installCommand: providedInstallCommand
+        }
+    }
+
+    return getCommandsForFrameworkAndPackageManager(framework, packageManager)
+}
+
 
 async function validateGitHubRepository(gitURL) {
     console.log(`🔍 Validating GitHub repository: ${gitURL}`)
@@ -56,11 +153,13 @@ async function createProject(name, gitURL, userId, config = {}) {
         userId
     }
 
+    const commandConfig = resolveProjectCommandConfig(config)
+
     // Add configuration if provided
     if (config.env !== undefined) projectData.env = config.env
     if (config.rootDir !== undefined) projectData.rootDir = config.rootDir
-    if (config.buildCommand !== undefined) projectData.buildCommand = config.buildCommand
-    if (config.installCommand !== undefined) projectData.installCommand = config.installCommand
+    if (commandConfig.buildCommand !== undefined) projectData.buildCommand = commandConfig.buildCommand
+    if (commandConfig.installCommand !== undefined) projectData.installCommand = commandConfig.installCommand
 
     // Create project with generated subdomain and optional config
     const project = await prisma.project.create({
@@ -133,12 +232,14 @@ async function updateProjectConfig(projectId, userId, config) {
         throw error
     }
 
+    const commandConfig = resolveProjectCommandConfig(config)
+
     // Prepare update data (only include defined fields)
     const updateData = {}
     if (config.env !== undefined) updateData.env = config.env
     if (config.rootDir !== undefined) updateData.rootDir = config.rootDir
-    if (config.buildCommand !== undefined) updateData.buildCommand = config.buildCommand
-    if (config.installCommand !== undefined) updateData.installCommand = config.installCommand
+    if (commandConfig.buildCommand !== undefined) updateData.buildCommand = commandConfig.buildCommand
+    if (commandConfig.installCommand !== undefined) updateData.installCommand = commandConfig.installCommand
 
     // Update project configuration
     const updatedProject = await prisma.project.update({
