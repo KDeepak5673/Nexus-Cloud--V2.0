@@ -21,8 +21,7 @@ The platform follows a microservices architecture with the following components:
 
 - **api-server**: REST API backend handling user management, projects, deployments, and analytics
 - **build-server**: Dockerized build service that clones, builds, and deploys projects to S3
-- **s3-reverse-proxy**: Reverse proxy service that routes subdomains to appropriate S3 static assets
-- **client**: React frontend application with modern UI and real-time features
+- **client**: React frontend application with modern UI, real-time features, and integrated S3 reverse-proxy for subdomain routing
 
 ### Technology Stack
 
@@ -48,8 +47,6 @@ The platform follows a microservices architecture with the following components:
    ```bash
    # Install dependencies for each service
    cd api-server && npm install
-   cd ../build-server && npm install
-   cd ../s3-reverse-proxy && npm install
    cd ../client && npm install
    ```
 
@@ -74,10 +71,7 @@ The platform follows a microservices architecture with the following components:
    # Terminal 1: API Server
    cd api-server && node index.js
    
-   # Terminal 2: S3 Reverse Proxy
-   cd s3-reverse-proxy && node index.js
-   
-   # Terminal 3: Frontend Client
+   # Terminal 2: Client Server (React frontend + S3 proxy)
    cd client && npm run dev
    ```
 
@@ -86,8 +80,7 @@ The platform follows a microservices architecture with the following components:
 | Service | Port | Description |
 |---------|------|-------------|
 | `api-server` | `:9000` | REST API endpoints |
-| `s3-reverse-proxy` | `:8000` | Subdomain routing |
-| `client` | `:5173` | React frontend (Vite dev server) |
+| `client` | `:3000` | React frontend + S3 subdomain proxy |
 
 ## 📊 Platform Features
 
@@ -122,7 +115,7 @@ The platform follows a microservices architecture with the following components:
 
 ## 🌍 URL Structure
 
-- **Local Development**: `http://[project-name].localhost:8000`
+- **Local Development**: `http://[project-name].localhost:3000`
 - **Production**: `http://[project-name].yourdomain.com`
 
 ## 📈 Analytics
