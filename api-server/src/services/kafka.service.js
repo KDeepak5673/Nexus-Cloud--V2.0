@@ -51,7 +51,7 @@ async function initKafkaConsumer() {
                                 })
                                 
                                 if (deployment && deployment.project) {
-                                    const deploymentUrl = `http://${deployment.project.subDomain}.localhost:8000`
+                                    const deploymentUrl = `http://${deployment.project.subDomain}.localhost:9000`
                                     console.log(`✅ Deployment ${DEPLOYEMENT_ID} is now READY`)
                                     console.log(`🌐 Deployment URL: ${deploymentUrl}`)
                                     

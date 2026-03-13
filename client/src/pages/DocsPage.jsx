@@ -166,7 +166,7 @@ function DocsPage() {
                 <div className="step-number">2</div>
                 <div className="step-content">
                   <h4>Configure Project Details</h4>
-                  <p><strong>Project Name:</strong> Select a unique identifier that will be used for your subdomain (e.g., "my-app" becomes my-app.localhost:8000).</p>
+                  <p><strong>Project Name:</strong> Select a unique identifier that will be used for your subdomain (e.g., "my-app" becomes my-app.localhost:9000).</p>
                   <p><strong>GitHub URL:</strong> Provide the complete repository URL (format: https://github.com/username/repository).</p>
                 </div>
               </div>
@@ -323,7 +323,7 @@ function DocsPage() {
 
               <div className="operation-item">
                 <h4>Access Live Projects</h4>
-                <p>When status shows READY, click the project URL or the <strong>🔗 Visit</strong> button to access your deployed application. URLs are served through the S3 reverse proxy on port 8000.</p>
+                <p>When status shows READY, click the project URL or the <strong>🔗 Visit</strong> button to access your deployed application. URLs are served through the API server's built-in S3 proxy.</p>
               </div>
 
               <div className="operation-item">
@@ -387,7 +387,7 @@ function DocsPage() {
                 <div className="stage-badge">6</div>
                 <div className="stage-content">
                   <h4>Ready</h4>
-                  <p>Deployment completed successfully. The application is now live and accessible via its subdomain through the S3 reverse proxy. DNS routing is automatically configured.</p>
+                  <p>Deployment completed successfully. The application is now live and accessible via its subdomain through the API server. DNS routing is automatically configured.</p>
                 </div>
               </div>
 
@@ -427,7 +427,7 @@ function DocsPage() {
             <h3>URL Structure</h3>
             <p>All deployed projects are accessible via the following URL format:</p>
             <div className="code-block">
-              <code>http://[project-name].localhost:8000</code>
+              <code>http://[project-name].localhost:9000</code>
             </div>
 
             <h3>URL System Features</h3>
@@ -578,17 +578,17 @@ function DocsPage() {
             <div className="troubleshoot-section">
               <h3>Project URL Not Accessible</h3>
               <div className="troubleshoot-content">
-                <p><strong>Symptoms:</strong> Cannot access project at subdomain.localhost:8000</p>
+                <p><strong>Symptoms:</strong> Cannot access project at subdomain.localhost:9000</p>
                 <p><strong>Resolution Steps:</strong></p>
                 <ul>
                   <li>Confirm deployment status shows READY (not IN_PROGRESS or QUEUED)</li>
-                  <li>Verify S3 reverse proxy is running on port 8000 (check terminal)</li>
+                  <li>Verify the API server is running on port 9000 (check terminal)</li>
                   <li>Ensure subdomain format matches project name exactly (check project card)</li>
-                  <li>Try accessing http://[project-name].localhost:8000 in browser</li>
+                  <li>Try accessing http://[project-name].localhost:9000 in browser</li>
                   <li>Clear browser cache and cookies, then try again</li>
                   <li>Check browser console for CORS or network errors</li>
                   <li>Verify S3 bucket contains files under the project subdomain prefix</li>
-                  <li>Check that reverse proxy logs show the subdomain resolution request</li>
+                  <li>Check that API server logs show the subdomain resolution request</li>
                   <li>Try accessing from incognito/private browsing mode</li>
                 </ul>
               </div>
@@ -707,8 +707,8 @@ function DocsPage() {
               </div>
 
               <div className="architecture-item">
-                <h4>🔄 S3 Reverse Proxy (Port 8000)</h4>
-                <p><strong>Node.js HTTP Server:</strong> Intelligent routing layer that maps subdomains to S3-hosted static assets. Handles DNS resolution and serves deployed applications with automatic caching.</p>
+                <h4>🔄 S3 Proxy (built into API Server)</h4>
+                <p><strong>Node.js HTTP Middleware:</strong> Intelligent routing layer integrated into the API server that maps subdomains to S3-hosted static assets. Handles DNS resolution and serves deployed applications automatically.</p>
               </div>
 
               <div className="architecture-item">
@@ -778,8 +778,8 @@ function DocsPage() {
               <li><strong>Build Trigger:</strong> ECS task launched with Docker container listening to Kafka</li>
               <li><strong>Build Execution:</strong> Container clones repo, installs deps, runs build, uploads to S3</li>
               <li><strong>Log Streaming:</strong> Build logs sent to Kafka → ClickHouse + Socket.io → Frontend</li>
-              <li><strong>DNS Resolution:</strong> S3 reverse proxy routes subdomain.localhost:8000 to S3 objects</li>
-              <li><strong>User Access:</strong> Deployed application served from S3 via reverse proxy</li>
+              <li><strong>DNS Resolution:</strong> API server's S3 proxy routes subdomain.localhost:9000 to S3 objects</li>
+              <li><strong>User Access:</strong> Deployed application served from S3 via the API server's built-in proxy</li>
             </ol>
 
             <div className="info-box">

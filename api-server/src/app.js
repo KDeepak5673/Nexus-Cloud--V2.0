@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler.middleware')
+const s3ProxyMiddleware = require('./middlewares/s3Proxy.middleware')
 
 // Import routes
 const authRoutes = require('./routes/auth.routes')
@@ -61,6 +62,10 @@ function createApp() {
 
     // Explicit OPTIONS handler for all routes
     app.options('*', cors(corsOptions))
+
+    // S3 reverse proxy - handles subdomain-based static site routing
+    app.use(s3ProxyMiddleware)
+
     app.get('/health', (req, res) => {
         res.json({
             status: 'ok',

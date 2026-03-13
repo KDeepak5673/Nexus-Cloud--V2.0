@@ -5,7 +5,7 @@ A comprehensive cloud deployment platform that enables seamless GitHub repositor
 ## 🚀 Features
 
 - **GitHub Integration**: Deploy any public GitHub repository with one click
-- **Automatic Subdomains**: Each project gets a unique subdomain (e.g., `my-app.localhost:8000`)
+- **Automatic Subdomains**: Each project gets a unique subdomain (e.g., `my-app.localhost:9000`)
 - **Real-time Deployment Logs**: Watch your build process live with streaming logs
 - **User Authentication**: Secure login/signup with Google OAuth and email/password via Firebase
 - **Project Management Dashboard**: Comprehensive dashboard for managing all your projects
@@ -19,9 +19,8 @@ A comprehensive cloud deployment platform that enables seamless GitHub repositor
 
 The platform follows a microservices architecture with the following components:
 
-- **api-server**: REST API backend handling user management, projects, deployments, and analytics
+- **api-server**: REST API backend handling user management, projects, deployments, analytics, and S3 proxy for subdomain-based static site routing
 - **build-server**: Dockerized build service that clones, builds, and deploys projects to S3
-- **s3-reverse-proxy**: Reverse proxy service that routes subdomains to appropriate S3 static assets
 - **client**: React frontend application with modern UI and real-time features
 
 ### Technology Stack
@@ -49,7 +48,6 @@ The platform follows a microservices architecture with the following components:
    # Install dependencies for each service
    cd api-server && npm install
    cd ../build-server && npm install
-   cd ../s3-reverse-proxy && npm install
    cd ../client && npm install
    ```
 
@@ -71,13 +69,10 @@ The platform follows a microservices architecture with the following components:
 
 5. **Start all services**:
    ```bash
-   # Terminal 1: API Server
+   # Terminal 1: API Server (includes S3 proxy for subdomain routing)
    cd api-server && node index.js
    
-   # Terminal 2: S3 Reverse Proxy
-   cd s3-reverse-proxy && node index.js
-   
-   # Terminal 3: Frontend Client
+   # Terminal 2: Frontend Client
    cd client && npm run dev
    ```
 
@@ -85,8 +80,7 @@ The platform follows a microservices architecture with the following components:
 
 | Service | Port | Description |
 |---------|------|-------------|
-| `api-server` | `:9000` | REST API endpoints |
-| `s3-reverse-proxy` | `:8000` | Subdomain routing |
+| `api-server` | `:9000` | REST API endpoints + S3 subdomain proxy |
 | `client` | `:5173` | React frontend (Vite dev server) |
 
 ## 📊 Platform Features
@@ -122,7 +116,7 @@ The platform follows a microservices architecture with the following components:
 
 ## 🌍 URL Structure
 
-- **Local Development**: `http://[project-name].localhost:8000`
+- **Local Development**: `http://[project-name].localhost:9000`
 - **Production**: `http://[project-name].yourdomain.com`
 
 ## 📈 Analytics
