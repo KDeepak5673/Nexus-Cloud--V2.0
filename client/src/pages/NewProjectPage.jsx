@@ -4,6 +4,57 @@ import { getProjectUrl, getProjectDisplayUrl } from '../lib/utils.js'
 import '../styles/ProjectConfig.css'
 import '../styles/NewProjectConfig.css'
 
+const FRAMEWORK_OPTIONS = [
+  { value: 'auto', label: 'Auto Detect' },
+  { value: 'next', label: 'Next.js' },
+  { value: 'vite', label: 'Vite' },
+  { value: 'react', label: 'React (CRA)' },
+  { value: 'vue', label: 'Vue' },
+  { value: 'angular', label: 'Angular' }
+]
+
+const PACKAGE_MANAGER_OPTIONS = [
+  { value: 'npm', label: 'npm' },
+  { value: 'pnpm', label: 'pnpm' },
+  { value: 'yarn', label: 'yarn' },
+  { value: 'bun', label: 'bun' }
+]
+
+function getPresetCommands(framework, packageManager) {
+  const nextBuildByPm = {
+    npm: 'npm run build -- --no-lint',
+    pnpm: 'pnpm run build -- --no-lint',
+    yarn: 'yarn build --no-lint',
+    bun: 'bun run build -- --no-lint'
+  }
+
+  if (framework === 'next') {
+    switch (packageManager) {
+      case 'pnpm':
+        return { installCommand: 'pnpm install --frozen-lockfile', buildCommand: nextBuildByPm.pnpm }
+      case 'yarn':
+        return { installCommand: 'yarn install --frozen-lockfile || yarn install', buildCommand: nextBuildByPm.yarn }
+      case 'bun':
+        return { installCommand: 'bun install', buildCommand: nextBuildByPm.bun }
+      case 'npm':
+      default:
+        return { installCommand: 'npm install', buildCommand: nextBuildByPm.npm }
+    }
+  }
+
+  switch (packageManager) {
+    case 'pnpm':
+      return { installCommand: 'pnpm install --frozen-lockfile', buildCommand: 'pnpm run build' }
+    case 'yarn':
+      return { installCommand: 'yarn install --frozen-lockfile || yarn install', buildCommand: 'yarn build' }
+    case 'bun':
+      return { installCommand: 'bun install', buildCommand: 'bun run build' }
+    case 'npm':
+    default:
+      return { installCommand: 'npm install', buildCommand: 'npm run build' }
+  }
+}
+
 function NewProjectPage() {
   const [repoUrl, setRepoUrl] = useState('')
   const [projectName, setProjectName] = useState('')
@@ -22,8 +73,10 @@ function NewProjectPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [envVars, setEnvVars] = useState([{ key: '', value: '', id: Math.random() }])
   const [rootDir, setRootDir] = useState('.')
-  const [buildCommand, setBuildCommand] = useState('npm run build')
-  const [installCommand, setInstallCommand] = useState('npm install')
+  const [buildCommand, setBuildCommand] = useState('')
+  const [installCommand, setInstallCommand] = useState('')
+  const [framework, setFramework] = useState('auto')
+  const [packageManager, setPackageManager] = useState('npm')
 
   // Helper function to sanitize project name for subdomain
   const sanitizeSubdomain = (name) => {
@@ -49,6 +102,28 @@ function NewProjectPage() {
     setEnvVars(envVars.map(env =>
       env.id === id ? { ...env, [field]: value } : env
     ))
+  }
+
+  const applyCommandPreset = (selectedFramework, selectedPackageManager) => {
+    if (selectedFramework === 'auto') {
+      setInstallCommand('')
+      setBuildCommand('')
+      return
+    }
+
+    const commands = getPresetCommands(selectedFramework, selectedPackageManager)
+    setInstallCommand(commands.installCommand)
+    setBuildCommand(commands.buildCommand)
+  }
+
+  const onFrameworkChange = (value) => {
+    setFramework(value)
+    applyCommandPreset(value, packageManager)
+  }
+
+  const onPackageManagerChange = (value) => {
+    setPackageManager(value)
+    applyCommandPreset(framework, value)
   }
 
   const handleDeploy = async (e) => {
@@ -86,8 +161,10 @@ function NewProjectPage() {
         gitURL: repoUrl,
         env: envObject,
         rootDir: rootDir.trim(),
-        buildCommand: buildCommand.trim(),
-        installCommand: installCommand.trim()
+        buildCommand: buildCommand.trim() || undefined,
+        installCommand: installCommand.trim() || undefined,
+        framework,
+        packageManager
       }
 
       console.log('Creating project:', projectData)
@@ -301,6 +378,40 @@ function NewProjectPage() {
                   <h3>Build Settings</h3>
 
                   <div className="form-group">
+                    <label htmlFor="framework">
+                      Framework
+                      <span className="label-hint">Choose your framework to auto-fill commands</span>
+                    </label>
+                    <select
+                      id="framework"
+                      value={framework}
+                      onChange={(e) => onFrameworkChange(e.target.value)}
+                      className="form-input"
+                    >
+                      {FRAMEWORK_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="packageManager">
+                      Package Manager
+                      <span className="label-hint">Used to generate install/build command presets</span>
+                    </label>
+                    <select
+                      id="packageManager"
+                      value={packageManager}
+                      onChange={(e) => onPackageManagerChange(e.target.value)}
+                      className="form-input"
+                    >
+                      {PACKAGE_MANAGER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
                     <label htmlFor="rootDir">
                       Project Root Directory
                       <span className="label-hint">Folder in your repo where the project code is (e.g., "client", "frontend", or "." for root)</span>
@@ -325,7 +436,7 @@ function NewProjectPage() {
                       type="text"
                       value={installCommand}
                       onChange={(e) => setInstallCommand(e.target.value)}
-                      placeholder="npm install"
+                      placeholder={framework === 'auto' ? 'Auto-detect (leave empty)' : 'Preset applied - edit if needed'}
                       className="form-input"
                     />
                   </div>
@@ -340,7 +451,7 @@ function NewProjectPage() {
                       type="text"
                       value={buildCommand}
                       onChange={(e) => setBuildCommand(e.target.value)}
-                      placeholder="npm run build"
+                      placeholder={framework === 'auto' ? 'Auto-detect (leave empty)' : 'Preset applied - edit if needed'}
                       className="form-input"
                     />
                   </div>

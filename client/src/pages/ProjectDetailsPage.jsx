@@ -1,9 +1,92 @@
 import React, { useState, useEffect } from 'react'
-import { getProject, getLogs } from '../lib/api'
+import { deployProjectById, getProject, getLogs, updateProjectConfig } from '../lib/api'
 import { getProjectUrl } from '../lib/utils.js'
 import ProjectConfigModal from '../components/ProjectConfigModal.jsx'
 import '../styles/ProjectDetails.css'
 import '../styles/ProjectConfig.css'
+
+const SUPPORTED_DETECTED_FRAMEWORKS = new Set(['next', 'vite', 'create-react-app', 'vue', 'angular'])
+
+function normalizeDetectedFramework(value) {
+    if (!value) return null
+    const framework = value.toLowerCase()
+    if (!SUPPORTED_DETECTED_FRAMEWORKS.has(framework)) return null
+    if (framework === 'create-react-app') return 'react'
+    return framework
+}
+
+function normalizeDetectedPackageManager(value) {
+    if (!value) return null
+    const packageManager = value.toLowerCase()
+    return ['npm', 'pnpm', 'yarn', 'bun'].includes(packageManager) ? packageManager : null
+}
+
+function getCommandsForDetectedConfig(framework, packageManager) {
+    if (!framework || !packageManager) {
+        return { installCommand: '', buildCommand: '' }
+    }
+
+    if (framework === 'next') {
+        switch (packageManager) {
+            case 'pnpm':
+                return { installCommand: 'pnpm install --frozen-lockfile', buildCommand: 'pnpm run build -- --no-lint' }
+            case 'yarn':
+                return { installCommand: 'yarn install --frozen-lockfile || yarn install', buildCommand: 'yarn build --no-lint' }
+            case 'bun':
+                return { installCommand: 'bun install', buildCommand: 'bun run build -- --no-lint' }
+            case 'npm':
+            default:
+                return { installCommand: 'npm install', buildCommand: 'npm run build -- --no-lint' }
+        }
+    }
+
+    switch (packageManager) {
+        case 'pnpm':
+            return { installCommand: 'pnpm install --frozen-lockfile', buildCommand: 'pnpm run build' }
+        case 'yarn':
+            return { installCommand: 'yarn install --frozen-lockfile || yarn install', buildCommand: 'yarn build' }
+        case 'bun':
+            return { installCommand: 'bun install', buildCommand: 'bun run build' }
+        case 'npm':
+        default:
+            return { installCommand: 'npm install', buildCommand: 'npm run build' }
+    }
+}
+
+function extractDetectedConfig(logEntries) {
+    const latestDetected = { framework: null, packageManager: null }
+
+    for (const entry of logEntries || []) {
+        const message = entry?.log || ''
+
+        const frameworkMatch = message.match(/Detected framework:\s*([a-zA-Z0-9-]+)/i)
+        if (frameworkMatch) {
+            const normalizedFramework = normalizeDetectedFramework(frameworkMatch[1])
+            if (normalizedFramework) {
+                latestDetected.framework = normalizedFramework
+            }
+        }
+
+        const packageManagerMatch = message.match(/Detected package manager:\s*([a-zA-Z0-9-]+)/i)
+        if (packageManagerMatch) {
+            const normalizedPm = normalizeDetectedPackageManager(packageManagerMatch[1])
+            if (normalizedPm) {
+                latestDetected.packageManager = normalizedPm
+            }
+        }
+    }
+
+    if (!latestDetected.framework || !latestDetected.packageManager) {
+        return null
+    }
+
+    const commands = getCommandsForDetectedConfig(latestDetected.framework, latestDetected.packageManager)
+
+    return {
+        ...latestDetected,
+        ...commands
+    }
+}
 
 function ProjectDetailsPage({ projectId }) {
     const [project, setProject] = useState(null)
@@ -17,6 +100,8 @@ function ProjectDetailsPage({ projectId }) {
     const [showConfigModal, setShowConfigModal] = useState(false)
     const [expandedView, setExpandedView] = useState(false)
     const [allDeploymentLogs, setAllDeploymentLogs] = useState([])
+    const [detectedConfig, setDetectedConfig] = useState(null)
+    const [applyingDetectedConfig, setApplyingDetectedConfig] = useState(false)
 
     useEffect(() => {
         if (projectId) {
@@ -107,12 +192,15 @@ function ProjectDetailsPage({ projectId }) {
             const response = await getLogs(deploymentId)
             if (response.logs) {
                 setLogs(response.logs)
+                setDetectedConfig(extractDetectedConfig(response.logs))
             } else {
                 setLogs([])
+                setDetectedConfig(null)
             }
         } catch (err) {
             console.error('Error fetching logs:', err)
             setLogs([])
+            setDetectedConfig(null)
         } finally {
             setLogsLoading(false)
         }
@@ -163,33 +251,47 @@ function ProjectDetailsPage({ projectId }) {
 
     const handleRetryDeployment = async () => {
         try {
-            const user = window.appState.user
-            if (!user) {
-                alert('Please log in to retry deployment')
-                return
-            }
+            const response = await deployProjectById(projectId)
 
-            const token = await user.getIdToken()
-            const response = await fetch(`http://localhost:5000/api/projects/${projectId}/deploy`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            })
-
-            const data = await response.json()
-
-            if (response.ok) {
+            if (response?.message || response?.status === 'queued') {
                 alert('New deployment started successfully!')
                 // Refresh project details to show new deployment
                 fetchProjectDetails()
             } else {
-                alert(`Failed to start deployment: ${data.error || 'Unknown error'}`)
+                alert(`Failed to start deployment: ${response?.error || 'Unknown error'}`)
             }
         } catch (error) {
             console.error('Error starting deployment:', error)
             alert('Error starting deployment. Please try again.')
+        }
+    }
+
+    const handleApplyDetectedConfig = async () => {
+        if (!detectedConfig || !project) return
+
+        try {
+            setApplyingDetectedConfig(true)
+
+            const response = await updateProjectConfig(project.id, {
+                rootDir: project.rootDir || '.',
+                framework: detectedConfig.framework,
+                packageManager: detectedConfig.packageManager,
+                installCommand: detectedConfig.installCommand,
+                buildCommand: detectedConfig.buildCommand
+            })
+
+            if (response?.status === 'success') {
+                setProject(response.data.project)
+                alert('Detected framework configuration applied successfully.')
+                fetchProjectDetails()
+            } else {
+                alert(response?.error || 'Failed to apply detected configuration')
+            }
+        } catch (error) {
+            console.error('Error applying detected config:', error)
+            alert('Failed to apply detected configuration')
+        } finally {
+            setApplyingDetectedConfig(false)
         }
     }
 
@@ -371,41 +473,70 @@ function ProjectDetailsPage({ projectId }) {
                             <span className="config-label">Build Command:</span>
                             <code className="config-value">{project.buildCommand || 'npm run build'}</code>
                         </div>
+                        {detectedConfig && (
+                            <>
+                                <div className="config-item">
+                                    <span className="config-label">Detected Framework (Logs):</span>
+                                    <code className="config-value">{detectedConfig.framework}</code>
+                                </div>
+                                <div className="config-item">
+                                    <span className="config-label">Detected Package Manager (Logs):</span>
+                                    <code className="config-value">{detectedConfig.packageManager}</code>
+                                </div>
+                                <div className="config-item">
+                                    <span className="config-label">Suggested Install Command:</span>
+                                    <code className="config-value">{detectedConfig.installCommand}</code>
+                                </div>
+                                <div className="config-item">
+                                    <span className="config-label">Suggested Build Command:</span>
+                                    <code className="config-value">{detectedConfig.buildCommand}</code>
+                                </div>
+                                <div className="config-item">
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={handleApplyDetectedConfig}
+                                        disabled={applyingDetectedConfig}
+                                    >
+                                        {applyingDetectedConfig ? 'Applying...' : 'Apply Detected Configuration'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
                 <div className="project-content" style={{ gridTemplateColumns: expandedView ? '1fr' : '300px 1fr' }}>
                     {/* Deployments List */}
                     {!expandedView && (
-                    <div className="deployments-section">
-                        <h3>Deployment History</h3>
-                        <div className="deployments-list">
-                            {deployments.length > 0 ? (
-                                deployments.map((deployment) => (
-                                    <div
-                                        key={deployment.id}
-                                        className={`deployment-item ${selectedDeployment?.id === deployment.id ? 'selected' : ''}`}
-                                        onClick={() => setSelectedDeployment(deployment)}
-                                    >
-                                        <div className="deployment-info">
-                                            <div className="deployment-id">#{deployment.id.slice(-8)}</div>
-                                            <div className="deployment-time">{getTimeAgo(deployment.createdAt)}</div>
-                                        </div>
+                        <div className="deployments-section">
+                            <h3>Deployment History</h3>
+                            <div className="deployments-list">
+                                {deployments.length > 0 ? (
+                                    deployments.map((deployment) => (
                                         <div
-                                            className="deployment-status"
-                                            style={{ '--status-color': getStatusColor(deployment.status) }}
+                                            key={deployment.id}
+                                            className={`deployment-item ${selectedDeployment?.id === deployment.id ? 'selected' : ''}`}
+                                            onClick={() => setSelectedDeployment(deployment)}
                                         >
-                                            {deployment.status}
+                                            <div className="deployment-info">
+                                                <div className="deployment-id">#{deployment.id.slice(-8)}</div>
+                                                <div className="deployment-time">{getTimeAgo(deployment.createdAt)}</div>
+                                            </div>
+                                            <div
+                                                className="deployment-status"
+                                                style={{ '--status-color': getStatusColor(deployment.status) }}
+                                            >
+                                                {deployment.status}
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="no-deployments">
+                                        <p>No deployments found for this project.</p>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="no-deployments">
-                                    <p>No deployments found for this project.</p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {/* Logs Section */}
@@ -421,52 +552,52 @@ function ProjectDetailsPage({ projectId }) {
                             </button>
                         </div>
                         {!expandedView && selectedDeployment && (
-                                <div className="selected-deployment-info">
-                                    <div className="deployment-info-details">
-                                        <span className="deployment-id">
-                                            Deployment #{selectedDeployment.id.slice(-8)}
-                                        </span>
-                                        <span
-                                            className="deployment-status-badge"
-                                            style={{
-                                                backgroundColor: getStatusColor(selectedDeployment.status),
-                                                color: 'white',
-                                                padding: '4px 8px',
-                                                borderRadius: '12px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '500'
-                                            }}
-                                        >
-                                            {selectedDeployment.status === 'IN_PROGRESS' && '⟳ '}
-                                            {selectedDeployment.status}
-                                        </span>
-                                        {selectedDeployment.status === 'FAIL' && (
-                                            <button
-                                                className="retry-deployment-btn"
-                                                onClick={handleRetryDeployment}
-                                                title="Start a new deployment"
-                                            >
-                                                Retry Deploy
-                                            </button>
-                                        )}
-                                    </div>
+                            <div className="selected-deployment-info">
+                                <div className="deployment-info-details">
+                                    <span className="deployment-id">
+                                        Deployment #{selectedDeployment.id.slice(-8)}
+                                    </span>
+                                    <span
+                                        className="deployment-status-badge"
+                                        style={{
+                                            backgroundColor: getStatusColor(selectedDeployment.status),
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '500'
+                                        }}
+                                    >
+                                        {selectedDeployment.status === 'IN_PROGRESS' && '⟳ '}
+                                        {selectedDeployment.status}
+                                    </span>
                                     {selectedDeployment.status === 'FAIL' && (
-                                        <div className="failure-message">
-                                            This deployment failed. Check the logs below for details.
-                                        </div>
-                                    )}
-                                    {selectedDeployment.status === 'IN_PROGRESS' && (
-                                        <div className="progress-message">
-                                            Deployment is currently in progress. Logs will update automatically.
-                                        </div>
-                                    )}
-                                    {selectedDeployment.status === 'QUEUED' && (
-                                        <div className="queued-message">
-                                            Deployment is queued and will start shortly.
-                                        </div>
+                                        <button
+                                            className="retry-deployment-btn"
+                                            onClick={handleRetryDeployment}
+                                            title="Start a new deployment"
+                                        >
+                                            Retry Deploy
+                                        </button>
                                     )}
                                 </div>
-                            )}
+                                {selectedDeployment.status === 'FAIL' && (
+                                    <div className="failure-message">
+                                        This deployment failed. Check the logs below for details.
+                                    </div>
+                                )}
+                                {selectedDeployment.status === 'IN_PROGRESS' && (
+                                    <div className="progress-message">
+                                        Deployment is currently in progress. Logs will update automatically.
+                                    </div>
+                                )}
+                                {selectedDeployment.status === 'QUEUED' && (
+                                    <div className="queued-message">
+                                        Deployment is queued and will start shortly.
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {!expandedView ? (
                             <div className="logs-container">
