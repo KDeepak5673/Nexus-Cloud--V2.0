@@ -26,3 +26,8 @@ export const getProjectDisplayUrl = (subDomain) => {
 export const isProjectLive = (deploymentStatus) => {
     return deploymentStatus === 'READY';
 };
+
+// Utility to join class names conditionally (small `cn` helper similar to clsx)
+export const cn = (...args) => {
+    return args.flat().filter(Boolean).join(' ');
+};

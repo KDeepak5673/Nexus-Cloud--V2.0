@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import { getUserProfile } from '../lib/api.js'
 import { getProjectUrl } from '../lib/utils.js'
 import ImageUpload from '../components/ImageUpload.jsx'
+import PricingSection from '../components/PricingSection'
 
 function UserProfilePage() {
     const { user, logout, updateProfile } = useAuth()
@@ -229,6 +230,14 @@ function UserProfilePage() {
                         </div>
                     </div>
                     <div className="profile-actions">
+                        <button
+                            className="btn btn-primary rounded-lg"
+                            onClick={() => window.appState.setPage('pricing')}
+                            style={{ marginRight: '0.75rem' }}
+                            aria-label="Upgrade Plan"
+                        >
+                            Upgrade Plan
+                        </button>
                         <button
                             className="btn btn-secondary"
                             onClick={() => setShowEditModal(true)}
