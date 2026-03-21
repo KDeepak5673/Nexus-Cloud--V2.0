@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "test": "node --test",
+    "start": "node index.js",
+    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate || node -e \"console.warn('Prisma generate skipped (likely Windows file lock). Run npm run prisma:generate after stopping Node processes.')\"",
+    "billing:worker": "node src/workers/billing-usage-worker.js",
+    "billing:month-end": "node src/workers/billing-month-end-job.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,8 +20,12 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
     "kafkajs": "^2.2.4",
+    "node-cron": "^3.0.3",
+    "pdfkit": "^0.17.2",
     "random-word-slugs": "^0.1.7",
+    "razorpay": "^2.9.6",
     "socket.io": "^4.7.4",
     "undici": "^6.1.0",
     "uuid": "^9.0.1",

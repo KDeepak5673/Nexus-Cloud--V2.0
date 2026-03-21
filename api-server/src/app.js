@@ -8,11 +8,19 @@ const projectRoutes = require('./routes/project.routes')
 const deploymentRoutes = require('./routes/deployment.routes')
 const analyticsRoutes = require('./routes/analytics.routes')
 const logsRoutes = require('./routes/logs.routes')
+const billingRoutes = require('./routes/billing.routes')
+const billingController = require('./controllers/billing.controller')
 
 function createApp() {
     const app = express()
 
-    app.use(express.json())
+    app.use(express.json({
+        verify: (req, res, buf) => {
+            if (req.originalUrl === '/api/billing/webhook/razorpay') {
+                req.rawBody = buf
+            }
+        }
+    }))
 
     // CORS Configuration
     const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -75,6 +83,8 @@ function createApp() {
     app.use('/project', projectRoutes)
     app.use('/api', deploymentRoutes)
     app.use('/api', analyticsRoutes)
+    app.post('/api/billing/webhook/razorpay', billingController.razorpayWebhook)
+    app.use('/api/billing', billingRoutes)
     app.use('/', logsRoutes)
 
     app.use(notFoundHandler)

@@ -154,3 +154,32 @@ This project demonstrates modern cloud deployment platform architecture and is d
 
 **Built with modern technologies for seamless GitHub repository deployment and management.**
 # Nexus-Cloud--V2.0
+
+## Billing System (Metered Usage + Razorpay)
+
+### What is Metered
+- Build Minutes: tracked from build-server execution runtime.
+- Bandwidth Egress: tracked from reverse proxy response bytes.
+
+### Billing Pipeline
+1. Build-server and reverse-proxy publish usage events to Kafka topic `billing-usage-events`.
+2. Billing worker validates events and stores immutable raw usage (`usage_events_raw`).
+3. Worker aggregates into hourly/daily/monthly tables.
+4. Month-end job generates invoice records and line items, plus PDF statements.
+5. Razorpay order/verify and webhooks manage payment state.
+6. Billing dashboard reads summary/timeseries/project breakdown/invoice history via `/api/billing/*`.
+
+### New Commands (api-server)
+- `npm run billing:worker`
+- `npm run billing:month-end`
+
+### Reliability Controls
+- Event idempotency via unique `eventId`.
+- Dead-letter queue for malformed usage payloads (`billing-usage-events-dlq`).
+- Razorpay webhook validation and event persistence.
+
+### Safe Rollout Plan
+1. Run in shadow mode for one billing cycle.
+2. Reconcile aggregate totals vs raw events daily.
+3. Enable Razorpay test mode order + webhook first.
+4. Enable production invoicing and month-end finalization after variance checks.

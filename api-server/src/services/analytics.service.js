@@ -1,5 +1,28 @@
 const prisma = require('../config/database')
 
+async function resolveBillingAccountIdForProject(project) {
+    if (project.billingAccountId) {
+        return project.billingAccountId
+    }
+
+    const membership = await prisma.billingAccountMember.findFirst({
+        where: { userId: project.userId },
+        select: { billingAccountId: true }
+    })
+
+    if (!membership?.billingAccountId) {
+        return null
+    }
+
+    // Backfill legacy projects so next resolve is fast and consistent.
+    await prisma.project.update({
+        where: { id: project.id },
+        data: { billingAccountId: membership.billingAccountId }
+    })
+
+    return membership.billingAccountId
+}
+
 async function getPlatformAnalytics() {
     const totalUsers = await prisma.user.count()
     const totalProjects = await prisma.project.count()
@@ -71,8 +94,11 @@ async function resolveSubdomain(subdomain) {
         throw error
     }
 
+    const billingAccountId = await resolveBillingAccountIdForProject(project)
+
     return {
         projectId: project.id,
+        billingAccountId,
         subdomain: project.subDomain,
         projectName: project.name,
         hasActiveDeployment: true

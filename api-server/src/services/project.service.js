@@ -1,5 +1,6 @@
 const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
+const { getPrimaryBillingAccountForUser } = require('./billing-account.service')
 
 const SUPPORTED_FRAMEWORKS = new Set([
     'auto',
@@ -144,13 +145,15 @@ async function validateGitHubRepository(gitURL) {
 async function createProject(name, gitURL, userId, config = {}) {
     // Validate GitHub repository first
     await validateGitHubRepository(gitURL)
+    const billingAccount = await getPrimaryBillingAccountForUser(userId)
 
     // Prepare project data with optional configuration
     const projectData = {
         name,
         gitURL,
         subDomain: generateSlug(),  // Generate random subdomain
-        userId
+        userId,
+        billingAccountId: billingAccount.id
     }
 
     const commandConfig = resolveProjectCommandConfig(config)

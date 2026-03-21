@@ -112,6 +112,55 @@ export async function updateProjectConfig(projectId, config) {
     })
 }
 
+export async function getBillingSummary() {
+    return request('/api/billing/summary')
+}
+
+export async function getBillingTimeseries(days = 30) {
+    return request(`/api/billing/usage/timeseries?days=${days}`)
+}
+
+export async function getBillingProjectUsage() {
+    return request('/api/billing/usage/projects')
+}
+
+export async function getBillingInvoices() {
+    return request('/api/billing/invoices')
+}
+
+export async function getBillingInvoiceDetails(invoiceId) {
+    return request(`/api/billing/invoices/${invoiceId}`)
+}
+
+export async function getBillingPricing() {
+    return request('/api/billing/pricing')
+}
+
+export async function createRazorpayOrder(payload = {}) {
+    return request('/api/billing/razorpay/order', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+}
+
+export async function verifyRazorpayPayment(payload) {
+    return request('/api/billing/razorpay/verify', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+}
+
+export async function getBillingAdjustments() {
+    return request('/api/billing/adjustments')
+}
+
+export async function createBillingAdjustment(payload) {
+    return request('/api/billing/adjustments', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+}
+
 export default {
     registerUser,
     getUser,
@@ -129,5 +178,15 @@ export default {
     resolveSubdomain,
     updateDeploymentStatus,
     simulateDeployment,
-    updateProjectConfig
+    updateProjectConfig,
+    getBillingSummary,
+    getBillingTimeseries,
+    getBillingProjectUsage,
+    getBillingInvoices,
+    getBillingInvoiceDetails,
+    getBillingPricing,
+    createRazorpayOrder,
+    verifyRazorpayPayment,
+    getBillingAdjustments,
+    createBillingAdjustment
 }
