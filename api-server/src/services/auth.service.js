@@ -1,5 +1,6 @@
 const prisma = require('../config/database')
 const { z } = require('zod')
+const { ensureBillingAccountForUser } = require('./billing-account.service')
 
 
 async function registerOrUpdateUser(userData) {
@@ -28,20 +29,25 @@ async function registerOrUpdateUser(userData) {
 
     if (existingUser) {
         // Update existing user - only update non-null fields
-        return await prisma.user.update({
+        const updatedUser = await prisma.user.update({
             where: { firebaseUid: cleanedData.firebaseUid },
             data: cleanedData
         })
+        await ensureBillingAccountForUser(updatedUser)
+        return updatedUser
     }
 
     // Create new user - use default values for missing fields
-    return await prisma.user.create({
+    const createdUser = await prisma.user.create({
         data: {
             ...cleanedData,
             displayName: cleanedData.displayName || 'User',
             email: cleanedData.email || `${cleanedData.firebaseUid}@unknown.com`
         }
     })
+
+    await ensureBillingAccountForUser(createdUser)
+    return createdUser
 }
 
 

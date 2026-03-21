@@ -120,6 +120,7 @@ async function createDeployment(projectId, userId) {
     const environment = [
         { name: 'GIT_REPOSITORY__URL', value: project.gitURL },
         { name: 'PROJECT_ID', value: projectId },
+        { name: 'BILLING_ACCOUNT_ID', value: project.billingAccountId || '' },
         { name: 'DEPLOYEMENT_ID', value: deployment.id },
         { name: 'PROJECT_ENVS', value: projectEnvs },
         { name: 'ROOT_DIR', value: rootDir }

@@ -18,6 +18,37 @@ enum DeployementStatus {
   FAIL
 }
 
+enum MetricType {
+  BUILD_MINUTES
+  EGRESS_MB
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+  FAILED
+}
+
+enum PaymentEventStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum BillingAccountUserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum QuotaEnforcementType {
+  SOFT
+  HARD
+}
+
 model User {
   id           String    @id @default(uuid())
   firebaseUid  String    @unique @map("firebase_uid")
@@ -27,6 +58,9 @@ model User {
   phoneNumber  String?   @map("phone_number")
   provider     String    // "google", "email"
   projects     Project[]
+  billingMemberships BillingAccountMember[]
+  createdBillingAccounts BillingAccount[] @relation("BillingAccountCreatedBy")
+  createdBillingAdjustments BillingAdjustment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -41,15 +75,25 @@ model Project {
   user           User          @relation(fields: [userId], references: [id])
   userId         String        @map("user_id")
   Deployement    Deployement[]
+  usageEventsRaw UsageEventRaw[]
+  usageAggregateHourly UsageAggregateHourly[]
+  usageAggregateDaily UsageAggregateDaily[]
+  usageAggregateMonthly UsageAggregateMonthly[]
+  invoiceLineItems InvoiceLineItem[]
+  billingAdjustments BillingAdjustment[]
   
   // Phase 1 Configuration Fields
   env            Json          @default("{}")
   rootDir        String        @default(".") @map("root_dir")
   buildCommand   String        @default("npm run build") @map("build_command")
   installCommand String        @default("npm install") @map("install_command")
+  billingAccountId String?     @map("billing_account_id")
+  billingAccount   BillingAccount? @relation(fields: [billingAccountId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([billingAccountId])
 }
 
 model Deployement {
@@ -60,4 +104,259 @@ model Deployement {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BillingAccount {
+  id                     String                 @id @default(uuid())
+  name                   String
+  currency               String                 @default("USD")
+  stripeCustomerId       String?                @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String?                @map("stripe_subscription_id")
+  defaultPaymentMethodId String?                @map("default_payment_method_id")
+  budgetSoftLimitUsd     Decimal?               @db.Decimal(12, 2) @map("budget_soft_limit_usd")
+  budgetHardLimitUsd     Decimal?               @db.Decimal(12, 2) @map("budget_hard_limit_usd")
+  graceUntil             DateTime?              @map("grace_until")
+  isDunningActive        Boolean                @default(false) @map("is_dunning_active")
+  createdByUserId        String?                @map("created_by_user_id")
+  createdBy              User?                  @relation("BillingAccountCreatedBy", fields: [createdByUserId], references: [id])
+  members                BillingAccountMember[]
+  projects               Project[]
+  usageEvents            UsageEventRaw[]
+  hourlyAggregates       UsageAggregateHourly[]
+  dailyAggregates        UsageAggregateDaily[]
+  monthlyAggregates      UsageAggregateMonthly[]
+  pricingRules           PricingRule[]
+  quotaPolicies          QuotaPolicy[]
+  invoices               Invoice[]
+  paymentEvents          PaymentEvent[]
+  adjustments            BillingAdjustment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("billing_accounts")
+}
+
+model BillingAccountMember {
+  id               String                 @id @default(uuid())
+  billingAccountId String                 @map("billing_account_id")
+  userId           String                 @map("user_id")
+  role             BillingAccountUserRole @default(MEMBER)
+  billingAccount   BillingAccount         @relation(fields: [billingAccountId], references: [id])
+  user             User                   @relation(fields: [userId], references: [id])
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@unique([billingAccountId, userId])
+  @@index([userId])
+  @@map("billing_account_members")
+}
+
+model UsageEventRaw {
+  id             String         @id @default(uuid())
+  eventId        String         @unique @map("event_id")
+  sourceService  String         @map("source_service")
+  eventType      String         @map("event_type")
+  accountId      String         @map("account_id")
+  workspaceId    String?        @map("workspace_id")
+  projectId      String?        @map("project_id")
+  metricType     MetricType     @map("metric_type")
+  quantity       Decimal        @db.Decimal(18, 6)
+  occurredAt     DateTime       @map("occurred_at")
+  traceId        String?        @map("trace_id")
+  metadata       Json?
+  processedAt    DateTime?      @map("processed_at")
+  ingestedAt     DateTime       @default(now()) @map("ingested_at")
+  billingAccount BillingAccount @relation(fields: [accountId], references: [id])
+  project        Project?       @relation(fields: [projectId], references: [id])
+
+  @@index([accountId, occurredAt])
+  @@index([projectId, occurredAt])
+  @@index([metricType, occurredAt])
+  @@map("usage_events_raw")
+}
+
+model UsageAggregateHourly {
+  id             String         @id @default(uuid())
+  accountId      String         @map("account_id")
+  workspaceId    String?        @map("workspace_id")
+  projectId      String?        @map("project_id")
+  metricType     MetricType     @map("metric_type")
+  bucketStart    DateTime       @map("bucket_start")
+  quantity       Decimal        @db.Decimal(18, 6)
+  unitCostUsd    Decimal        @db.Decimal(12, 6) @map("unit_cost_usd")
+  costUsd        Decimal        @db.Decimal(12, 6) @map("cost_usd")
+  billingAccount BillingAccount @relation(fields: [accountId], references: [id])
+  project        Project?       @relation(fields: [projectId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([accountId, projectId, metricType, bucketStart])
+  @@index([accountId, bucketStart])
+  @@map("usage_aggregates_hourly")
+}
+
+model UsageAggregateDaily {
+  id             String         @id @default(uuid())
+  accountId      String         @map("account_id")
+  workspaceId    String?        @map("workspace_id")
+  projectId      String?        @map("project_id")
+  metricType     MetricType     @map("metric_type")
+  bucketDate     DateTime       @map("bucket_date")
+  quantity       Decimal        @db.Decimal(18, 6)
+  unitCostUsd    Decimal        @db.Decimal(12, 6) @map("unit_cost_usd")
+  costUsd        Decimal        @db.Decimal(12, 6) @map("cost_usd")
+  billingAccount BillingAccount @relation(fields: [accountId], references: [id])
+  project        Project?       @relation(fields: [projectId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([accountId, projectId, metricType, bucketDate])
+  @@index([accountId, bucketDate])
+  @@map("usage_aggregates_daily")
+}
+
+model UsageAggregateMonthly {
+  id             String         @id @default(uuid())
+  accountId      String         @map("account_id")
+  workspaceId    String?        @map("workspace_id")
+  projectId      String?        @map("project_id")
+  metricType     MetricType     @map("metric_type")
+  monthStart     DateTime       @map("month_start")
+  quantity       Decimal        @db.Decimal(18, 6)
+  unitCostUsd    Decimal        @db.Decimal(12, 6) @map("unit_cost_usd")
+  costUsd        Decimal        @db.Decimal(12, 6) @map("cost_usd")
+  billingAccount BillingAccount @relation(fields: [accountId], references: [id])
+  project        Project?       @relation(fields: [projectId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([accountId, projectId, metricType, monthStart])
+  @@index([accountId, monthStart])
+  @@map("usage_aggregates_monthly")
+}
+
+model PricingRule {
+  id             String         @id @default(uuid())
+  accountId      String?        @map("account_id")
+  metricType     MetricType     @map("metric_type")
+  unitPriceUsd   Decimal        @db.Decimal(12, 6) @map("unit_price_usd")
+  includedUnits  Decimal        @default(0) @db.Decimal(18, 6) @map("included_units")
+  activeFrom     DateTime       @default(now()) @map("active_from")
+  activeTo       DateTime?      @map("active_to")
+  isDefault      Boolean        @default(false) @map("is_default")
+  billingAccount BillingAccount? @relation(fields: [accountId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([accountId, metricType, activeFrom])
+  @@map("pricing_rules")
+}
+
+model QuotaPolicy {
+  id               String               @id @default(uuid())
+  accountId        String               @map("account_id")
+  metricType       MetricType           @map("metric_type")
+  monthlyIncluded  Decimal              @default(0) @db.Decimal(18, 6) @map("monthly_included")
+  softLimitPercent Int                  @default(80) @map("soft_limit_percent")
+  hardLimitPercent Int                  @default(100) @map("hard_limit_percent")
+  enforcement      QuotaEnforcementType @default(SOFT)
+  billingAccount   BillingAccount       @relation(fields: [accountId], references: [id])
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@unique([accountId, metricType])
+  @@map("quota_policies")
+}
+
+model Invoice {
+  id                        String         @id @default(uuid())
+  accountId                 String         @map("account_id")
+  periodStart               DateTime       @map("period_start")
+  periodEnd                 DateTime       @map("period_end")
+  status                    InvoiceStatus  @default(DRAFT)
+  subtotalUsd               Decimal        @db.Decimal(12, 2) @map("subtotal_usd")
+  taxUsd                    Decimal        @default(0) @db.Decimal(12, 2) @map("tax_usd")
+  totalUsd                  Decimal        @db.Decimal(12, 2) @map("total_usd")
+  stripeInvoiceId           String?        @unique @map("stripe_invoice_id")
+  stripePaymentIntentId     String?        @map("stripe_payment_intent_id")
+  stripeHostedInvoiceUrl    String?        @map("stripe_hosted_invoice_url")
+  externalPdfUrl            String?        @map("external_pdf_url")
+  snapshotJson              Json           @map("snapshot_json")
+  billingAccount            BillingAccount @relation(fields: [accountId], references: [id])
+  lineItems                 InvoiceLineItem[]
+  paymentEvents             PaymentEvent[]
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  @@index([accountId, periodStart])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id            String     @id @default(uuid())
+  invoiceId     String     @map("invoice_id")
+  metricType    MetricType @map("metric_type")
+  projectId     String?    @map("project_id")
+  description   String
+  quantity      Decimal    @db.Decimal(18, 6)
+  unitPriceUsd  Decimal    @db.Decimal(12, 6) @map("unit_price_usd")
+  amountUsd     Decimal    @db.Decimal(12, 2) @map("amount_usd")
+  metadata      Json?
+  invoice       Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  project       Project?   @relation(fields: [projectId], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model PaymentEvent {
+  id               String             @id @default(uuid())
+  accountId        String             @map("account_id")
+  invoiceId        String?            @map("invoice_id")
+  stripeEventId    String?            @unique @map("stripe_event_id")
+  stripeObjectId   String?            @map("stripe_object_id")
+  status           PaymentEventStatus @default(PENDING)
+  amountUsd        Decimal?           @db.Decimal(12, 2) @map("amount_usd")
+  eventType        String             @map("event_type")
+  payload          Json?
+  billingAccount   BillingAccount     @relation(fields: [accountId], references: [id])
+  invoice          Invoice?           @relation(fields: [invoiceId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([accountId, createdAt])
+  @@map("payment_events")
+}
+
+model BillingAdjustment {
+  id             String         @id @default(uuid())
+  accountId      String         @map("account_id")
+  metricType     MetricType?    @map("metric_type")
+  projectId      String?        @map("project_id")
+  amountUsd      Decimal        @db.Decimal(12, 2) @map("amount_usd")
+  reason         String
+  notes          String?
+  createdByUserId String?       @map("created_by_user_id")
+  billingAccount BillingAccount @relation(fields: [accountId], references: [id])
+  project        Project?       @relation(fields: [projectId], references: [id])
+  createdByUser  User?          @relation(fields: [createdByUserId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([accountId, createdAt])
+  @@map("billing_adjustments")
+}
+
+model WebhookEvent {
+  id            String   @id @default(uuid())
+  provider      String
+  eventId       String   @unique @map("event_id")
+  eventType     String   @map("event_type")
+  processedAt   DateTime @default(now()) @map("processed_at")
+  payload       Json?
+
+  @@map("webhook_events")
 }
