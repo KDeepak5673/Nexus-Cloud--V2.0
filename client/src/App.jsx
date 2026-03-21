@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import UserProfilePage from './pages/UserProfilePage'
 import PricingPage from './pages/PricingPage'
+import BillingPage from './pages/BillingPage'
 import DocsPage from './pages/DocsPage'
 import ProjectDetailsPage from './pages/ProjectDetailsPage'
 import RequireAuth from './components/RequireAuth.jsx'
@@ -65,6 +66,12 @@ function App() {
         return (
           <RequireAuth>
             <PricingPage />
+          </RequireAuth>
+        )
+      case 'billing':
+        return (
+          <RequireAuth>
+            <BillingPage />
           </RequireAuth>
         )
       case 'login':

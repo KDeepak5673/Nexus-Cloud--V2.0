@@ -81,6 +81,15 @@ function Navigation({ currentPage }) {
               <li>
                 <a
                   href="#"
+                  className={currentPage === 'billing' ? 'active' : ''}
+                  onClick={() => window.appState.setPage('billing')}
+                >
+                  Billing
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
                   className={currentPage === 'docs' ? 'active' : ''}
                   onClick={() => window.appState.setPage('docs')}
                 >

@@ -1,0 +1,142 @@
+.billing-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 34px 20px 60px;
+}
+
+.billing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.billing-header h1 {
+    font-size: 2rem;
+    margin: 0;
+    color: #09352c;
+}
+
+.billing-upgrade-btn {
+    background: linear-gradient(135deg, #06685a, #00906c);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.billing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.billing-metric-card {
+    background: linear-gradient(145deg, #ffffff, #f4fbf8);
+    border: 1px solid #d6ece4;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.billing-metric-card h3 {
+    margin: 8px 0;
+    font-size: 1.5rem;
+    color: #0d4338;
+}
+
+.billing-metric-title,
+.billing-metric-subtitle {
+    margin: 0;
+    color: #4f7268;
+}
+
+.billing-chart-card,
+.billing-table-card,
+.billing-alerts {
+    margin-top: 16px;
+    background: #fff;
+    border: 1px solid #d6ece4;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.billing-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.billing-table-card table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.billing-table-card th,
+.billing-table-card td {
+    text-align: left;
+    border-bottom: 1px solid #edf6f3;
+    padding: 10px 6px;
+    font-size: 0.95rem;
+}
+
+.invoice-row-clickable {
+    cursor: pointer;
+}
+
+.invoice-row-clickable:hover {
+    background: #f3fbf8;
+}
+
+.adjustment-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr auto;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.adjustment-form select,
+.adjustment-form input {
+    border: 1px solid #cfe8df;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 0.92rem;
+}
+
+.billing-alert {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.billing-alert.ok {
+    background: #edf9f4;
+}
+
+.billing-alert.soft {
+    background: #fff7e3;
+}
+
+.billing-alert.hard {
+    background: #ffecec;
+}
+
+.billing-error {
+    color: #b31f2e;
+}
+
+@media (max-width: 960px) {
+
+    .billing-grid,
+    .billing-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .adjustment-form {
+        grid-template-columns: 1fr;
+    }
+}
