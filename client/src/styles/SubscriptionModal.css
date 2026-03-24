@@ -1,0 +1,260 @@
+/* Subscription Modal Styles */
+
+.subscription-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.subscription-modal-content {
+  background: white;
+  border: 1px solid #000000;
+  border-radius: 10px;
+  padding: 1.2rem;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(34, 197, 94, 0.2);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Header */
+.subscription-modal-header {
+  margin-bottom: 1rem;
+}
+
+.subscription-modal-header h2 {
+  font-size: 0.4rem;
+  font-weight: 600;
+  color: #feffff;
+  margin: 0;
+}
+
+.subscription-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #22c55e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.subscription-modal-close:hover {
+  color: #16a34a;
+}
+
+/* Plan Section */
+.subscription-plan-name {
+ font-size : 0.4rem;
+  font-weight: 700;
+  color: #22c55e;
+  margin-bottom: 0.3rem;
+}
+
+.subscription-billing-info {
+  font-size:  0.4rem;
+  color: #16a34a;
+  margin: 0 0 1rem 0;
+}
+
+/* Features Section */
+.subscription-included-section {
+  margin-bottom: 1rem;
+}
+
+.subscription-included-section h3 {
+  font-size:  0.4rem;
+  font-weight: 600;
+  color: #16a34a;
+  margin: 0 0 0.6rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.subscription-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.subscription-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size:  0.4rem;
+  color: #047857;
+  background: #f0fdf4;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-left: 2px solid #000000;
+}
+
+.feature-check {
+  color: #000000;
+  flex-shrink: 0;
+  min-width: 16px;
+}
+
+/* Payment Section */
+.subscription-payment-section {
+  margin-bottom: 1rem;
+}
+
+.subscription-payment-section h3 {
+  font-size:  0.4rem;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 0.6rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.payment-method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: #f0fdf4;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payment-option:hover {
+  border-color: #000000;
+  background: #dcfce7;
+}
+
+.payment-option input[type="radio"] {
+  cursor: pointer;
+  accent-color: #22c55e;
+  width: 16px;
+  height: 16px;
+}
+
+.payment-option span {
+  color: #047857;
+  font-size:  0.4rem;
+}
+
+/* Price Breakdown */
+.subscription-price-breakdown {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(238, 124, 11, 0.1);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size:  0.4rem;
+  color: rgba(238, 124, 11, 0.6);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(238, 124, 11, 0.05);
+}
+
+.price-row:last-child {
+  border-bottom: none;
+}
+
+.price-row.total {
+  border-top: 1px solid rgba(238, 124, 11, 0.15);
+  padding-top: 0.6rem;
+  margin-top: 0.6rem;
+  font-weight: 600;
+  color: rgba(238, 124, 11, 0.85);
+  font-size: 0.4rem;
+}
+
+/* Actions */
+.subscription-modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.btn-cancel,
+.btn-pay-now {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size:  0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(238, 124, 11, 0.3);
+  color: rgba(238, 124, 11, 0.85);
+}
+
+.btn-cancel:hover {
+  background: rgba(238, 124, 11, 0.08);
+  border-color: rgba(238, 124, 11, 0.6);
+}
+
+.btn-pay-now {
+  background: rgba(238, 124, 11, 0.85);
+  color: #1a1a1a;
+}
+
+
+
+/* Responsive */
+@media (max-width: 480px) {
+  .subscription-modal-content {
+    padding: 1.2rem;
+    max-width: 95vw;
+  }
+
+  .subscription-modal-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .subscription-plan-name {
+    font-size: 1.2rem;
+  }
+
+  .subscription-modal-actions {
+    flex-direction: column;
+  }
+}

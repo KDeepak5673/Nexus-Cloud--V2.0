@@ -161,6 +161,12 @@ export async function createBillingAdjustment(payload) {
     })
 }
 
+export async function deleteDeployment(deploymentId) {
+    return request(`/api/deployments/${deploymentId}`, {
+        method: 'DELETE'
+    })
+}
+
 export default {
     registerUser,
     getUser,
@@ -188,5 +194,6 @@ export default {
     createRazorpayOrder,
     verifyRazorpayPayment,
     getBillingAdjustments,
-    createBillingAdjustment
+    createBillingAdjustment,
+    deleteDeployment
 }

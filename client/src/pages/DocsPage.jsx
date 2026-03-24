@@ -97,6 +97,13 @@ function DocsPage() {
                 User Profile
               </a>
               <a
+                href="#billing-pricing"
+                className={activeSection === 'billing-pricing' ? 'active' : ''}
+                onClick={(e) => { e.preventDefault(); scrollToSection('billing-pricing'); }}
+              >
+                Billing & Pricing
+              </a>
+              <a
                 href="#troubleshooting"
                 className={activeSection === 'troubleshooting' ? 'active' : ''}
                 onClick={(e) => { e.preventDefault(); scrollToSection('troubleshooting'); }}
@@ -541,6 +548,157 @@ function DocsPage() {
 
             <div className="info-box">
               <strong>Note:</strong> Analytics data is updated in real-time and stored indefinitely. ClickHouse enables sub-second query performance even on millions of log records.
+            </div>
+          </section>
+
+          {/* Billing & Pricing */}
+          <section id="billing-pricing" className="docs-section">
+            <h2>💳 Billing & Pricing</h2>
+            <p>Nexus Cloud uses a <strong>subscription-based pricing model</strong> designed for developers, freelancers, and teams. Each plan provides a fixed set of platform resources including build minutes, storage, bandwidth, and project limits.</p>
+            <p>Users can monitor usage, track costs, and manage their subscription through the <strong>Billing Dashboard</strong>. There are <strong>no setup fees</strong>, and users can upgrade plans anytime.</p>
+
+            <h3>Pricing Plans</h3>
+
+            <div className="pricing-table">
+              <div className="pricing-item">
+                <h4>🚀 Starter (Free)</h4>
+                <p className="plan-price"><strong>$0 / month</strong></p>
+                <p className="plan-desc">Best suited for students, personal projects, and experimentation.</p>
+                <p><strong>Includes:</strong></p>
+                <ul>
+                  <li>Deploy up to <strong>5 projects</strong></li>
+                  <li><strong>500 build minutes</strong> per month</li>
+                  <li><strong>1 GB storage</strong></li>
+                  <li><strong>5 GB bandwidth</strong> per month</li>
+                </ul>
+              </div>
+
+              <div className="pricing-item">
+                <h4>💼 Pro</h4>
+                <p className="plan-price"><strong>$19 / month</strong></p>
+                <p className="plan-desc">Ideal for developers and freelancers building multiple projects.</p>
+                <p><strong>Includes:</strong></p>
+                <ul>
+                  <li>Deploy up to <strong>50 projects</strong></li>
+                  <li><strong>5,000 build minutes</strong> per month</li>
+                  <li><strong>20 GB storage</strong></li>
+                  <li><strong>100 GB bandwidth</strong> per month</li>
+                </ul>
+              </div>
+
+              <div className="pricing-item">
+                <h4>👥 Team</h4>
+                <p className="plan-price"><strong>$49 / month</strong></p>
+                <p className="plan-desc">Designed for startups and collaborative teams.</p>
+                <p><strong>Includes:</strong></p>
+                <ul>
+                  <li>Deploy up to <strong>200 projects</strong></li>
+                  <li><strong>20,000 build minutes</strong> per month</li>
+                  <li><strong>100 GB storage</strong></li>
+                  <li><strong>500 GB bandwidth</strong> per month</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>Billing Dashboard</h3>
+            <p>The Billing Dashboard provides visibility into account usage, subscription status, and billing activity. Users can access it from the <strong>Billing section in the main navigation</strong>.</p>
+
+            <h4>Month-to-Date Metrics</h4>
+            <p>The top section displays real-time usage metrics for the current billing cycle:</p>
+            <ul>
+              <li><strong>Month-to-date Build Minutes:</strong> Total build time consumed this cycle</li>
+              <li><strong>Month-to-date Egress:</strong> Data transferred from S3 to users</li>
+              <li><strong>Current Estimated Cost:</strong> Total charge for the current billing period</li>
+            </ul>
+            <p>These values update automatically as deployments and traffic occur.</p>
+
+            <h4>Daily Spend Trend</h4>
+            <p>An interactive chart showing daily cost trends during the current billing cycle. This helps users:</p>
+            <ul>
+              <li>Track spending patterns over time</li>
+              <li>Understand usage behavior and peaks</li>
+              <li>Monitor growth in infrastructure usage</li>
+            </ul>
+            <p>If there is no usage data yet, the chart will appear empty.</p>
+
+            <h4>Pricing Catalog</h4>
+            <p>Lists pricing configuration and quotas available for the account. If pricing configuration has not been loaded yet, this section displays:</p>
+            <div className="code-block"><code>Pricing data unavailable</code></div>
+
+            <h4>Project Usage Breakdown</h4>
+            <p>Provides a per-project view of resource usage, including:</p>
+            <ul>
+              <li>Project name</li>
+              <li>Build minutes used</li>
+              <li>Data egress</li>
+              <li>Estimated cost</li>
+            </ul>
+            <p>If no projects have generated usage yet, the dashboard displays:</p>
+            <div className="code-block"><code>No usage yet this cycle</code></div>
+            <p>This view helps identify which projects consume the most resources.</p>
+
+            <h4>Invoice History</h4>
+            <p>Lists all invoices generated for the account. Each invoice contains:</p>
+            <ul>
+              <li>Billing period (month covered)</li>
+              <li>Invoice status (Paid, Pending, Failed)</li>
+              <li>Total amount charged</li>
+            </ul>
+            <p>If billing has not occurred yet, the dashboard displays:</p>
+            <div className="code-block"><code>No invoices generated yet</code></div>
+            <p>Invoices are generated automatically for billing cycles that include billable usage.</p>
+
+            <h4>Invoice Details</h4>
+            <p>Selecting an invoice from the Invoice History displays a detailed breakdown including:</p>
+            <ul>
+              <li>Billing period</li>
+              <li>Line items (charges by category)</li>
+              <li>Usage summary</li>
+              <li>Total charges applied</li>
+            </ul>
+            <p>This section provides full transparency into how charges are calculated.</p>
+
+            <h4>Manual Adjustments</h4>
+            <p><strong>Admin-only feature:</strong> Allows administrators to apply billing adjustments including:</p>
+            <ul>
+              <li>Credits and discounts</li>
+              <li>Corrections to charges</li>
+              <li>Additional charges</li>
+            </ul>
+            <p>Each adjustment requires a metric selection, amount, and reason for documentation and audit purposes.</p>
+
+            <h4>Usage Alerts</h4>
+            <p>Displays important notifications related to billing, usage, or subscription changes. Examples include:</p>
+            <ul>
+              <li>Unusual usage activity</li>
+              <li>Plan limit warnings</li>
+              <li>Billing events</li>
+              <li>Subscription changes</li>
+            </ul>
+            <p>If no alerts exist, the dashboard displays:</p>
+            <div className="code-block"><code>No alerts</code></div>
+
+            <h3>Managing Your Subscription</h3>
+            <p>Click the <strong>Manage Billing</strong> button in the Billing Dashboard to:</p>
+            <ul>
+              <li>Upgrade or change plans</li>
+              <li>Update payment methods</li>
+              <li>Review billing settings</li>
+            </ul>
+            <p>Plan upgrades take effect immediately according to platform billing policies. Downgrades apply at the end of the current billing cycle.</p>
+
+            <h3>Best Practices for Managing Costs</h3>
+            <p>To optimize usage and control costs:</p>
+            <ul>
+              <li><strong>Minimize Deployments:</strong> Deploy only when necessary to reduce build minutes consumption</li>
+              <li><strong>Remove Unused Projects:</strong> Delete inactive projects to free up quota slots</li>
+              <li><strong>Optimize Builds:</strong> Streamline build scripts, use caching, and avoid unnecessary installations</li>
+              <li><strong>Monitor Usage:</strong> Regularly review the Billing Dashboard to track project-level consumption</li>
+              <li><strong>Plan Ahead:</strong> Choose a plan with headroom for anticipated growth</li>
+            </ul>
+
+            <div className="info-box">
+              <strong>💡 Tip:</strong> Review your Billing Dashboard monthly to understand which projects consume the most resources. Use this data to optimize your deployment strategy and choose the right plan for your needs.
             </div>
           </section>
 

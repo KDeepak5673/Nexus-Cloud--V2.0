@@ -110,6 +110,22 @@ async function simulateDeployment(req, res, next) {
     }
 }
 
+async function deleteDeployment(req, res, next) {
+    try {
+        const { deploymentId } = req.params
+        const userId = req.user.id
+
+        await deploymentService.deleteDeployment(deploymentId, userId)
+
+        return res.json({
+            success: true,
+            message: 'Deployment deleted successfully'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
 module.exports = {
     createDeployment,
     deployProject,
@@ -117,5 +133,6 @@ module.exports = {
     getDeploymentUrl,
     getAllDeployments,
     updateDeploymentStatus,
-    simulateDeployment
+    simulateDeployment,
+    deleteDeployment
 }

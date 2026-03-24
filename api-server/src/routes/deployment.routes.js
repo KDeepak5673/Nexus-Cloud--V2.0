@@ -18,6 +18,9 @@ router.get('/deployments/:deploymentId/url', verifyAuth, deploymentController.ge
 // Update deployment status
 router.patch('/deployments/:id/status', deploymentController.updateDeploymentStatus)
 
+// Delete deployment
+router.delete('/deployments/:deploymentId', requireAuth, deploymentController.deleteDeployment)
+
 // Simulate deployment process
 router.post('/deployments/:id/simulate', deploymentController.simulateDeployment)
 

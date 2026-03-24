@@ -374,11 +374,41 @@ async function simulateDeploymentProcess(deploymentId) {
     }, 2000)
 }
 
+async function deleteDeployment(deploymentId, userId) {
+    // Find the deployment
+    const deployment = await prisma.deployement.findUnique({
+        where: { id: deploymentId },
+        include: { project: true }
+    })
+
+    if (!deployment) {
+        const error = new Error('Deployment not found')
+        error.statusCode = 404
+        throw error
+    }
+
+    // Check user authorization
+    if (deployment.project.userId !== userId) {
+        const error = new Error('Access denied')
+        error.statusCode = 403
+        throw error
+    }
+
+    // Delete deployment record from database
+    await prisma.deployement.delete({
+        where: { id: deploymentId }
+    })
+
+    console.log(`🗑️ Deployment ${deploymentId} deleted successfully`)
+    return { success: true }
+}
+
 module.exports = {
     createDeployment,
     getDeploymentStatus,
     getDeploymentUrl,
     getUserDeployments,
     updateDeploymentStatus,
-    simulateDeploymentProcess
+    simulateDeploymentProcess,
+    deleteDeployment
 }

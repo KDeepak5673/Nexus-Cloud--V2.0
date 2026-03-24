@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "../lib/utils.js";
@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import SubscriptionModal from "./SubscriptionModal";
 
 type Plan = {
   name: string;
@@ -68,6 +69,22 @@ const plans: Plan[] = [
 export function PricingSection() {
   const ref = useRef<HTMLElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+
+  const handleUpgradeClick = (plan: Plan) => {
+    setSelectedPlan(plan);
+  };
+
+  const handleConfirmPayment = async (plan: Plan) => {
+    // Integrate with your payment gateway here
+    console.log("Confirming payment for:", plan);
+    // Example: Call your API to initiate payment
+    // const response = await api.post('/payments/initiate', { planName: plan.name });
+  };
+
+  const handleCloseModal = () => {
+    setSelectedPlan(null);
+  };
 
   return (
     <section ref={ref} aria-labelledby="pricing-heading" className="pricing-page-wrapper">
@@ -104,7 +121,11 @@ export function PricingSection() {
                     </ul>
 
                     <div className="pricing-cta">
-                      <button className={`btn-modern ${popular ? 'btn-primary' : 'btn-outline'}`} aria-label={`Upgrade to ${plan.name}`}>
+                      <button 
+                        className={`btn-modern ${popular ? 'btn-primary' : 'btn-outline'}`} 
+                        aria-label={`Upgrade to ${plan.name}`}
+                        onClick={() => handleUpgradeClick(plan)}
+                      >
                         {plan.name === 'Enterprise' ? 'Contact Sales' : `Upgrade to ${plan.name}`}
                       </button>
                     </div>
@@ -115,6 +136,13 @@ export function PricingSection() {
           })}
         </div>
       </div>
+      
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        plan={selectedPlan} 
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmPayment}
+      />
     </section>
   );
 }
