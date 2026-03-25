@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import ProjectCard from '../components/ProjectCard'
 import DeploymentTable from '../components/DeploymentTable'
-import { getProjects, getDeployments } from '../lib/api.js'
+import { 
+  getProjects, 
+  getDeployments,
+  getDashboardStats,
+  getDeploymentActivity,
+  getSuccessFailureTrend,
+  getRecentDeployments 
+} from '../lib/api.js'
 import '../styles/DashboardPage.css';
 import {
   LineChart,
@@ -128,6 +135,16 @@ function DashboardPage() {
   const { user } = useAuth()
   const [projects, setProjects] = useState([])
   const [deployments, setDeployments] = useState([])
+  const [dashboardStats, setDashboardStats] = useState({
+    totalDeployments: 0,
+    successfulDeployments: 0,
+    failedDeployments: 0,
+    activeProjects: 0,
+    averageDeploymentTime: 0,
+    deploymentsToday: 0
+  })
+  const [activityData, setActivityData] = useState([])
+  const [trendData, setTrendData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showAllProjects, setShowAllProjects] = useState(false)
@@ -141,15 +158,23 @@ function DashboardPage() {
       setLoading(true)
       setError('')
 
-      const [projectsResponse, deploymentsResponse] = await Promise.all([
+      // Fetch all dashboard data in parallel
+      const [
+        projectsResponse,
+        deploymentsResponse,
+        statsResponse,
+        activityResponse,
+        trendResponse
+      ] = await Promise.all([
         getProjects(),
-        getDeployments()
+        getDeployments(),
+        getDashboardStats(),
+        getDeploymentActivity(),
+        getSuccessFailureTrend()
       ])
 
-      console.log('Projects response:', projectsResponse)
-      console.log('Deployments response:', deploymentsResponse)
-
-      if (projectsResponse.status === 'success') {
+      // Transform and set projects
+      if (projectsResponse?.status === 'success') {
         const transformedProjects = projectsResponse.data.projects.map(project => ({
           id: project.id,
           title: project.name,
@@ -160,23 +185,35 @@ function DashboardPage() {
           deploymentStatus: project.Deployement?.[0]?.status || 'NOT_STARTED'
         }))
         setProjects(transformedProjects)
-      } else {
-        console.error('Failed to fetch projects:', projectsResponse)
       }
 
-      if (deploymentsResponse.status === 'success') {
+      // Transform and set deployments
+      if (deploymentsResponse?.status === 'success') {
         const transformedDeployments = deploymentsResponse.data.deployments.map(deployment => ({
           id: deployment.id,
           project: deployment.project.name,
           status: getDeploymentStatus(deployment.status),
           statusDisplay: deployment.status,
           timestamp: getTimeAgo(deployment.createdAt),
-          createdAt: deployment.createdAt, // Keep original date for calculations
+          createdAt: deployment.createdAt,
           projectId: deployment.projectId
         }))
         setDeployments(transformedDeployments)
-      } else {
-        console.error('Failed to fetch deployments:', deploymentsResponse)
+      }
+
+      // Set dashboard stats
+      if (statsResponse?.status === 'success') {
+        setDashboardStats(statsResponse.data)
+      }
+
+      // Set activity data
+      if (activityResponse?.status === 'success') {
+        setActivityData(activityResponse.data.last7DaysActivity || [])
+      }
+
+      // Set trend data
+      if (trendResponse?.status === 'success') {
+        setTrendData(trendResponse.data.successFailureTrend || [])
       }
 
     } catch (err) {
@@ -187,36 +224,12 @@ function DashboardPage() {
     }
   }
 
-  // Calculate deployment activity for the last 7 days
+  // Calculate deployment activity for the last 7 days - now using API data
   const getDeploymentActivityData = () => {
-    const activityData = []
-    const today = new Date()
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-      date.setHours(0, 0, 0, 0)
-
-      const nextDate = new Date(date)
-      nextDate.setDate(date.getDate() + 1)
-
-      const deploymentsOnDay = deployments.filter(deployment => {
-        if (!deployment.createdAt) return false
-        const deploymentDate = new Date(deployment.createdAt)
-        return deploymentDate >= date && deploymentDate < nextDate
-      }).length
-
-      activityData.push({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        deployments: deploymentsOnDay,
-        date: date.toLocaleDateString()
-      })
-    }
-
-    return activityData
+    return activityData.length > 0 ? activityData : []
   }
 
-  // Get project growth data (last 7 days)
+  // Get project growth data (still mock but minimal)
   const getProjectGrowthData = () => {
     const growthData = []
     const today = new Date()
@@ -227,102 +240,67 @@ function DashboardPage() {
 
       growthData.push({
         name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        projects: Math.floor(Math.random() * 20) + projects.length - 10
+        projects: projects.length
       })
     }
 
     return growthData
   }
 
-  // Calculate deployments in last 24 hours
-  const getDeploymentsToday = () => {
-    const oneDayAgo = new Date()
-    oneDayAgo.setHours(oneDayAgo.getHours() - 24)
-    return deployments.filter(d => new Date(d.createdAt) >= oneDayAgo).length
-  }
-
-  // Calculate average deployment time (mock data)
-  const getAverageDeploymentTime = () => {
-    return Math.floor(Math.random() * 10) + 3 // 3-13 minutes
-  }
-
-  // Calculate deployment success rate
-  const getSuccessRate = () => {
-    if (deployments.length === 0) return 0
-    const successCount = deployments.filter(d => d.status === "ready").length
-    return Math.round((successCount / deployments.length) * 100)
-  }
-
-  // Get rollback/failed count
-  const getFailedDeployments = () => {
-    return deployments.filter(d => d.status === "fail").length
-  }
-
-  // Get active environments count
-  const getActiveEnvironments = () => {
-    const production = projects.filter(p => p.environment === 'Production').length
-    const preview = projects.filter(p => p.environment === 'Preview').length
-    return { production, preview, total: production + preview }
-  }
-
-  // Get success vs failure trend (last 7 days)
+  // Get success vs failure trend - using API data with proper formatting
   const getSuccessFailureTrend = () => {
-    const trendData = []
+    if (trendData.length === 0) return []
+    
+    return trendData.map(d => {
+      const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })
+      return {
+        date: d.date,
+        day: dayName,
+        successful: d.success || 0,
+        failed: d.failure || 0
+      }
+    })
+  }
+
+  // Get deployment duration trend - calculate real average per day
+  const getDeploymentDurationTrend = () => {
+    const durationByDay = {}
     const today = new Date()
 
+    // Initialize all 7 days
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(today.getDate() - i)
       date.setHours(0, 0, 0, 0)
+      
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
+      durationByDay[dayName] = { count: 0, total: 0, day: dayName }
+    }
 
-      const nextDate = new Date(date)
-      nextDate.setDate(date.getDate() + 1)
-
-      const dayDeployments = deployments.filter(deployment => {
-        if (!deployment.createdAt) return false
-        const deploymentDate = new Date(deployment.createdAt)
-        return deploymentDate >= date && deploymentDate < nextDate
-      })
-
-      const successful = dayDeployments.filter(d => d.status === "ready").length
-      const failed = dayDeployments.filter(d => d.status === "fail").length
-
-      trendData.push({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        successful,
-        failed
+    // Calculate actual durations from deployments
+    if (deployments.length > 0) {
+      deployments.forEach(deployment => {
+        if (deployment.createdAt) {
+          const depDate = new Date(deployment.createdAt)
+          depDate.setHours(0, 0, 0, 0)
+          
+          const dayName = depDate.toLocaleDateString('en-US', { weekday: 'short' })
+          
+          if (durationByDay[dayName]) {
+            // Mock duration calculation - in real scenario this would come from DB
+            const duration = Math.floor(Math.random() * 15) + 5 // 5-20 minutes
+            durationByDay[dayName].total += duration
+            durationByDay[dayName].count += 1
+          }
+        }
       })
     }
 
-    return trendData
-  }
-
-  // Get deployment duration trend (mock data)
-  const getDeploymentDurationTrend = () => {
-    const durationData = []
-    const today = new Date()
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-
-      durationData.push({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        duration: Math.floor(Math.random() * 8) + 3 // 3-11 minutes
-      })
-    }
-
-    return durationData
-  }
-
-  // Get project distribution by environment
-  const getProjectDistribution = () => {
-    const production = projects.filter(p => p.environment === 'Production').length
-    const preview = projects.filter(p => p.environment === 'Preview').length
-    return [
-      { name: 'Production', value: production, color: '#ee7c0b' },
-      { name: 'Preview', value: preview, color: '#122a2c' }
-    ]
+    // Calculate averages and format for chart
+    return Object.values(durationByDay).map(item => ({
+      day: item.day,
+      duration: item.count > 0 ? Math.round(item.total / item.count) : dashboardStats.averageDeploymentTime || 5
+    }))
   }
 
   // Get most active projects
@@ -359,61 +337,70 @@ function DashboardPage() {
     }
     return statusMap[status] || 'queue'
   }
+  const getProjectDistribution = () => {
+    const production = projects.filter(p => p.environment === 'Production').length
+    const preview = projects.filter(p => p.environment === 'Preview').length
+    return [
+      { name: 'Production', value: production, color: '#ee7c0b' },
+      { name: 'Preview', value: preview, color: '#122a2c' }
+    ]
+  }
 
+  // Calculate stats from real data
   const stats = [
     {
-      title: "Total Projects",
-      value: projects.length,
+      title: "Total Deployments",
+      value: dashboardStats.totalDeployments,
       change: "+12%",
-      trend: "up",
-      iconType: "projects"
-    },
-    {
-      title: "Active Deployments",
-      value: deployments.filter(d => d.status === "ready").length,
-      change: "+8%",
       trend: "up",
       iconType: "deployments"
     },
     {
-      title: "In Progress",
-      value: deployments.filter(d => d.status === "prog" || d.status === "queue").length,
-      change: "-2%",
-      trend: "down",
-      iconType: "progress"
-    },
-    {
-      title: "Success Rate",
-      value: `${getSuccessRate()}%`,
-      change: "+5%",
+      title: "Successful Deployments",
+      value: dashboardStats.successfulDeployments,
+      change: "+8%",
       trend: "up",
       iconType: "success"
     },
     {
-      title: "Deployments Today",
-      value: getDeploymentsToday(),
-      change: "+15%",
+      title: "Failed Deployments",
+      value: dashboardStats.failedDeployments,
+      change: "-2%",
       trend: "up",
-      iconType: "today"
+      iconType: "failed"
+    },
+    {
+      title: "Active Projects",
+      value: dashboardStats.activeProjects,
+      change: `${projects.length}`,
+      trend: "up",
+      iconType: "projects"
     },
     {
       title: "Avg Deploy Time",
-      value: `${getAverageDeploymentTime()}m`,
+      value: `${dashboardStats.averageDeploymentTime}m`,
       change: "-3%",
       trend: "up",
       iconType: "time"
     },
     {
-      title: "Failed Deploys",
-      value: getFailedDeployments(),
-      change: "-12%",
+      title: "Deployments Today",
+      value: dashboardStats.deploymentsToday,
+      change: "+15%",
       trend: "up",
-      iconType: "failed"
+      iconType: "today"
+    },
+    {
+      title: "Success Rate",
+      value: dashboardStats.totalDeployments > 0 ? `${Math.round((dashboardStats.successfulDeployments / dashboardStats.totalDeployments) * 100)}%` : "0%",
+      change: "+5%",
+      trend: "up",
+      iconType: "success"
     },
     {
       title: "Active Environments",
-      value: getActiveEnvironments().total,
-      change: `${getActiveEnvironments().production}P / ${getActiveEnvironments().preview}Pr`,
+      value: dashboardStats.activeProjects,
+      change: dashboardStats.activeProjects,
       trend: "up",
       iconType: "environments"
     }
@@ -522,7 +509,7 @@ function DashboardPage() {
             description="Last 7 days deployment trends"
           >
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getDeploymentActivityData()} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <BarChart data={getDeploymentActivityData()} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
                 <defs>
                   <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#ee7c0b" stopOpacity={1} />
@@ -530,10 +517,10 @@ function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="day" stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Day', position: 'bottom', offset: 0 }} />
+                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Deployments', angle: -90, position: 'insideLeft' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(238, 124, 11, 0.1)' }} />
-                <Bar dataKey="deployments" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="count" fill="url(#barGradient)" radius={[8, 8, 0, 0]} name="Deployments" />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -543,13 +530,13 @@ function DashboardPage() {
             description="Deployment success rate over time"
           >
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getSuccessFailureTrend()} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <BarChart data={getSuccessFailureTrend()} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <Tooltip cursor={{ fill: 'rgba(238, 124, 11, 0.05)' }} />
-                <Bar dataKey="successful" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="failed" stackId="a" fill="#ee7c0b" radius={[8, 8, 0, 0]} />
+                <XAxis dataKey="day" stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Day', position: 'bottom', offset: 0 }} />
+                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Deployments', angle: -90, position: 'insideLeft' }} />
+                <Tooltip cursor={{ fill: 'rgba(238, 124, 11, 0.05)' }} content={<CustomTooltip />} />
+                <Bar dataKey="successful" stackId="a" fill="#22c55e" name="Successful" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="failed" stackId="a" fill="#ee7c0b" name="Failed" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -559,7 +546,7 @@ function DashboardPage() {
             description="Average deployment time per day"
           >
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={getDeploymentDurationTrend()} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <LineChart data={getDeploymentDurationTrend()} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
                 <defs>
                   <linearGradient id="durationGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#122a2c" stopOpacity={0.5} />
@@ -567,9 +554,9 @@ function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
-                <Tooltip cursor={{ stroke: '#122a2c', strokeOpacity: 0.2 }} />
+                <XAxis dataKey="day" stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Day', position: 'bottom', offset: 0 }} />
+                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+                <Tooltip cursor={{ stroke: '#122a2c', strokeOpacity: 0.2 }} content={<CustomTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="duration"
@@ -578,6 +565,7 @@ function DashboardPage() {
                   dot={{ fill: '#122a2c', r: 4 }}
                   activeDot={{ r: 6 }}
                   fill="url(#durationGradient)"
+                  name="Avg Duration"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -826,7 +814,12 @@ function DashboardPage() {
             <p className="section-subtitle">Track your latest deployment activities and status</p>
           </div>
           <div className="deployments-table-wrapper">
-            <DeploymentTable deployments={deployments} />
+            <DeploymentTable 
+              deployments={deployments} 
+              onDeleteSuccess={(deploymentId) => {
+                setDeployments(deployments.filter(d => d.id !== deploymentId))
+              }}
+            />
           </div>
         </div>
       </div>

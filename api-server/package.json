@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.511.0",
+    "@aws-sdk/client-s3": "^3.1016.0",
     "@clickhouse/client": "^0.2.9",
     "@prisma/client": "^5.9.1",
     "cors": "^2.8.5",

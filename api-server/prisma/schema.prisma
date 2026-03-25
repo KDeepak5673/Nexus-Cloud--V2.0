@@ -97,10 +97,13 @@ model Project {
 }
 
 model Deployement {
-  id        String            @id @default(uuid())
-  project   Project           @relation(fields: [projectId], references: [id])
-  projectId String            @map("project_id")
-  status    DeployementStatus @default(NOT_STARTED)
+  id               String            @id @default(uuid())
+  project          Project           @relation(fields: [projectId], references: [id])
+  projectId        String            @map("project_id")
+  status           DeployementStatus @default(NOT_STARTED)
+  environment      String?           @default("production")
+  finishedAt       DateTime?         @map("finished_at")
+  deploymentTime   Int?              @map("deployment_time") // in seconds
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,10 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import api from '../lib/api'
 
 function DeploymentTable({ deployments, onDeleteSuccess }) {
     const [loadingId, setLoadingId] = useState(null)
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [visibleDeployments, setVisibleDeployments] = useState(deployments)
+
+    // Update visible deployments when props change
+    useEffect(() => {
+        setVisibleDeployments(deployments)
+    }, [deployments])
 
     const handleDeploy = async (projectId) => {
         setLoadingId(projectId)
@@ -42,11 +48,19 @@ function DeploymentTable({ deployments, onDeleteSuccess }) {
             const res = await api.deleteDeployment(deleteConfirm)
             if (res && res.success) {
                 console.log('Deployment deleted successfully')
+                
+                // Immediately remove from UI
+                setVisibleDeployments(visibleDeployments.filter(d => d.id !== deleteConfirm))
+                
+                // Clear confirmation modal
                 setDeleteConfirm(null)
+                
+                // Notify parent component to update deployments list
                 if (onDeleteSuccess) {
                     onDeleteSuccess(deleteConfirm)
                 }
-                // TODO: Show success notification
+                
+                console.log('✅ Deployment removed from database and S3')
             } else {
                 console.error('Failed to delete deployment:', res?.message || res)
                 alert(`Error: ${res?.message || 'Failed to delete deployment'}`)

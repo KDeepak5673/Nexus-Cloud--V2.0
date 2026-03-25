@@ -167,6 +167,22 @@ export async function deleteDeployment(deploymentId) {
     })
 }
 
+export async function getDashboardStats() {
+    return request('/api/dashboard/stats')
+}
+
+export async function getDeploymentActivity() {
+    return request('/api/dashboard/activity')
+}
+
+export async function getSuccessFailureTrend() {
+    return request('/api/dashboard/trend')
+}
+
+export async function getRecentDeployments(limit = 10) {
+    return request(`/api/dashboard/deployments?limit=${limit}`)
+}
+
 export default {
     registerUser,
     getUser,
@@ -195,5 +211,9 @@ export default {
     verifyRazorpayPayment,
     getBillingAdjustments,
     createBillingAdjustment,
-    deleteDeployment
+    deleteDeployment,
+    getDashboardStats,
+    getDeploymentActivity,
+    getSuccessFailureTrend,
+    getRecentDeployments
 }

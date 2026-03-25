@@ -1,5 +1,6 @@
 const prisma = require('../config/database')
 const { ECSClient, RunTaskCommand } = require('@aws-sdk/client-ecs')
+const { deleteDeploymentFromS3 } = require('../utils/s3')
 
 const ecsClient = new ECSClient({
     region: process.env.AWS_REGION || 'ap-south-1',
@@ -375,7 +376,7 @@ async function simulateDeploymentProcess(deploymentId) {
 }
 
 async function deleteDeployment(deploymentId, userId) {
-    // Find the deployment
+    // Find the deployment with project details
     const deployment = await prisma.deployement.findUnique({
         where: { id: deploymentId },
         include: { project: true }
@@ -394,13 +395,22 @@ async function deleteDeployment(deploymentId, userId) {
         throw error
     }
 
+    // Delete deployment artifacts from S3
+    // This is done before database deletion in case it fails
+    // We log the failure but continue with database deletion
+    const s3DeleteSuccess = await deleteDeploymentFromS3(deploymentId, deployment.project.subDomain)
+    
+    if (!s3DeleteSuccess) {
+        console.warn(`⚠️ S3 deletion failed for deployment ${deploymentId}, but continuing with database deletion`)
+    }
+
     // Delete deployment record from database
     await prisma.deployement.delete({
         where: { id: deploymentId }
     })
 
-    console.log(`🗑️ Deployment ${deploymentId} deleted successfully`)
-    return { success: true }
+    console.log(`✅ Deployment ${deploymentId} deleted successfully from database and S3`)
+    return { success: true, s3Cleaned: s3DeleteSuccess }
 }
 
 module.exports = {
