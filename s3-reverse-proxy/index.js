@@ -12,6 +12,10 @@ const PORT = process.env.PORT || 8000
 
 const BASE_PATH = process.env.BASE_PATH
 const API_SERVER_URL = process.env.API_SERVER_URL
+const ROOT_DOMAIN = (process.env.ROOT_DOMAIN || process.env.DEPLOYMENT_BASE_DOMAIN || '').trim().toLowerCase()
+
+// Respect forwarded host headers when running behind a load balancer/proxy.
+app.set('trust proxy', true)
 
 // Validate required environment variables
 if (!API_SERVER_URL || API_SERVER_URL === 'undefined') {
@@ -32,6 +36,35 @@ console.log('🔧 Configuration:')
 console.log(`   PORT: ${PORT}`)
 console.log(`   BASE_PATH: ${BASE_PATH}`)
 console.log(`   API_SERVER_URL: ${API_SERVER_URL}`)
+if (ROOT_DOMAIN) {
+    console.log(`   ROOT_DOMAIN: ${ROOT_DOMAIN}`)
+}
+
+function getRequestHost(req) {
+    const forwardedHost = req.headers['x-forwarded-host']
+    const hostHeader = Array.isArray(forwardedHost) ? forwardedHost[0] : (forwardedHost || req.headers.host || '')
+    const firstHost = String(hostHeader).split(',')[0].trim().toLowerCase()
+    return firstHost.split(':')[0]
+}
+
+function getRoutingKeyFromHost(hostname) {
+    if (!hostname) return null
+
+    // Local dev style: my-app.localhost
+    if (hostname.endsWith('.localhost')) {
+        return hostname.replace(/\.localhost$/, '')
+    }
+
+    // Wildcard domain style: my-app.nexus-cloud.tech
+    if (ROOT_DOMAIN && hostname.endsWith(`.${ROOT_DOMAIN}`)) {
+        return hostname.slice(0, -(ROOT_DOMAIN.length + 1))
+    }
+
+    // Fallback for direct host header usage.
+    const parts = hostname.split('.').filter(Boolean)
+    if (parts.length <= 1) return null
+    return parts[0]
+}
 
 const proxy = httpProxy.createProxy()
 
@@ -236,16 +269,36 @@ proxy.on('error', (err, req, res) => {
 
 app.use(async (req, res) => {
     try {
-        const hostname = req.hostname;
-        const subdomain = hostname.split('.')[0];
+        if (req.path === '/health') {
+            return res.json({
+                status: 'ok',
+                service: 's3-reverse-proxy',
+                timestamp: new Date().toISOString()
+            })
+        }
 
-        console.log(`\n🌐 Request for subdomain: ${subdomain}`);
+        const hostname = getRequestHost(req)
+        const subdomain = getRoutingKeyFromHost(hostname)
+
+        if (!subdomain) {
+            return res.status(400).send(`
+                <html>
+                    <head><title>Bad Request</title></head>
+                    <body>
+                        <h1>400 - Invalid Host</h1>
+                        <p>Could not resolve subdomain from host "${hostname}".</p>
+                    </body>
+                </html>
+            `)
+        }
+
+        console.log(`\n🌐 Request host: ${hostname} | routing key: ${subdomain}`);
 
         // Call API server to resolve subdomain to project info
         let projectId;
 
         try {
-            const apiUrl = `${API_SERVER_URL}/api/resolve/${subdomain}`;
+            const apiUrl = `${API_SERVER_URL}/api/resolve/${encodeURIComponent(subdomain)}`;
             console.log(`   Calling: ${apiUrl}`);
 
             const response = await axios.get(apiUrl, {
@@ -321,15 +374,6 @@ proxy.on('proxyReq', (proxyReq, req, res) => {
     const url = req.url;
     if (url === '/')
         proxyReq.path += 'index.html'
-})
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        service: 's3-reverse-proxy',
-        timestamp: new Date().toISOString()
-    })
 })
 
 async function startServer() {

@@ -3,6 +3,13 @@ const clickhouse = require('../config/clickhouse')
 const { v4: uuidv4 } = require('uuid')
 const prisma = require('../config/database')
 
+const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
+const DEPLOYMENT_URL_PROTOCOL = (process.env.DEPLOYMENT_URL_PROTOCOL || 'https').trim()
+
+function buildDeploymentUrl(subDomain) {
+    return `${DEPLOYMENT_URL_PROTOCOL}://${subDomain}.${DEPLOYMENT_BASE_DOMAIN}`
+}
+
 async function initKafkaConsumer() {
     try {
         console.log('🔄 Attempting to connect to Kafka...')
@@ -38,23 +45,23 @@ async function initKafkaConsumer() {
                         // Check if deployment is complete based on log message
                         if (log.includes('Done') && !log.includes('Error') && !log.includes('Failed')) {
                             console.log(`🎉 Deployment ${DEPLOYEMENT_ID} completed! Updating status to READY...`)
-                            
+
                             try {
                                 await prisma.deployement.update({
                                     where: { id: DEPLOYEMENT_ID },
                                     data: { status: 'READY' }
                                 })
-                                
+
                                 const deployment = await prisma.deployement.findUnique({
                                     where: { id: DEPLOYEMENT_ID },
                                     include: { project: true }
                                 })
-                                
+
                                 if (deployment && deployment.project) {
-                                    const deploymentUrl = `http://${deployment.project.subDomain}.localhost:8000`
+                                    const deploymentUrl = buildDeploymentUrl(deployment.project.subDomain)
                                     console.log(`✅ Deployment ${DEPLOYEMENT_ID} is now READY`)
                                     console.log(`🌐 Deployment URL: ${deploymentUrl}`)
-                                    
+
                                     // Emit deployment complete event
                                     if (global.io) {
                                         global.io.to(`deployment:${DEPLOYEMENT_ID}`).emit('deployment-complete', {
@@ -68,18 +75,18 @@ async function initKafkaConsumer() {
                                 console.error('❌ Error updating deployment status:', dbError)
                             }
                         }
-                        
+
                         // Check for build errors/failures
                         if (log.includes('Error:') || log.includes('FAILED') || log.includes('Build failed')) {
                             console.log(`❌ Deployment ${DEPLOYEMENT_ID} failed! Updating status to FAIL...`)
-                            
+
                             try {
                                 await prisma.deployement.update({
                                     where: { id: DEPLOYEMENT_ID },
                                     data: { status: 'FAIL' }
                                 })
                                 console.log(`❌ Deployment ${DEPLOYEMENT_ID} marked as FAILED`)
-                                
+
                                 // Emit deployment failed event
                                 if (global.io) {
                                     global.io.to(`deployment:${DEPLOYEMENT_ID}`).emit('deployment-failed', {

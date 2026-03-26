@@ -5,7 +5,7 @@ A comprehensive cloud deployment platform that enables seamless GitHub repositor
 ## 🚀 Features
 
 - **GitHub Integration**: Deploy any public GitHub repository with one click
-- **Automatic Subdomains**: Each project gets a unique subdomain (e.g., `my-app.localhost:8000`)
+- **Automatic Subdomains**: Each project gets a unique subdomain (e.g., `my-app.nexus-cloud.tech`)
 - **Real-time Deployment Logs**: Watch your build process live with streaming logs
 - **User Authentication**: Secure login/signup with Google OAuth and email/password via Firebase
 - **Project Management Dashboard**: Comprehensive dashboard for managing all your projects
@@ -122,8 +122,8 @@ The platform follows a microservices architecture with the following components:
 
 ## 🌍 URL Structure
 
-- **Local Development**: `http://[project-name].localhost:8000`
-- **Production**: `http://[project-name].yourdomain.com`
+- **Wildcard Domain**: `https://[project-name].nexus-cloud.tech`
+- **Custom Domain**: `https://[project-name].yourdomain.com`
 
 ## 📈 Analytics
 

@@ -2,23 +2,19 @@
 export const getProjectUrl = (subDomain, isLive = true) => {
     if (!subDomain) return null;
 
-    // For development/local testing
-    const baseUrl = 'localhost:8000';
+    const baseUrl = import.meta.env.VITE_DEPLOYMENT_BASE_DOMAIN
+        || (import.meta.env.DEV ? 'localhost:8000' : 'nexus-cloud.tech');
+    const protocol = import.meta.env.VITE_DEPLOYMENT_URL_PROTOCOL
+        || (baseUrl.includes('localhost') ? 'http' : 'https');
 
-    // For production, you would use your actual domain
-    // const baseUrl = 'yourdomain.com';
-
-    return `http://${subDomain}.${baseUrl}`;
+    return `${protocol}://${subDomain}.${baseUrl}`;
 };
 
 export const getProjectDisplayUrl = (subDomain) => {
     if (!subDomain) return null;
 
-    // For development/local testing
-    const baseUrl = 'localhost:8000';
-
-    // For production, you would use your actual domain
-    // const baseUrl = 'yourdomain.com';
+    const baseUrl = import.meta.env.VITE_DEPLOYMENT_BASE_DOMAIN
+        || (import.meta.env.DEV ? 'localhost:8000' : 'nexus-cloud.tech');
 
     return `${subDomain}.${baseUrl}`;
 };

@@ -2,6 +2,13 @@ const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
 const { getPrimaryBillingAccountForUser } = require('./billing-account.service')
 
+const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
+const DEPLOYMENT_URL_PROTOCOL = (process.env.DEPLOYMENT_URL_PROTOCOL || 'https').trim()
+
+function buildDeploymentUrl(subDomain) {
+    return `${DEPLOYMENT_URL_PROTOCOL}://${subDomain}.${DEPLOYMENT_BASE_DOMAIN}`
+}
+
 const SUPPORTED_FRAMEWORKS = new Set([
     'auto',
     'next',
@@ -209,7 +216,7 @@ async function getProjectById(projectId) {
         Deployement: project.Deployement.map(deployment => ({
             ...deployment,
             url: deployment.status === 'READY'
-                ? `https://${project.subDomain}.nexuscloud.app`
+                ? buildDeploymentUrl(project.subDomain)
                 : null
         }))
     }

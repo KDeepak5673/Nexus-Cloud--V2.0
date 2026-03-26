@@ -2,6 +2,13 @@ const prisma = require('../config/database')
 const { ECSClient, RunTaskCommand } = require('@aws-sdk/client-ecs')
 const { deleteDeploymentFromS3 } = require('../utils/s3')
 
+const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
+const DEPLOYMENT_URL_PROTOCOL = (process.env.DEPLOYMENT_URL_PROTOCOL || 'https').trim()
+
+function buildDeploymentUrl(subDomain) {
+    return `${DEPLOYMENT_URL_PROTOCOL}://${subDomain}.${DEPLOYMENT_BASE_DOMAIN}`
+}
+
 const ecsClient = new ECSClient({
     region: process.env.AWS_REGION || 'ap-south-1',
     credentials: {
@@ -198,7 +205,7 @@ async function startDeploymentSimulation(deploymentId) {
                                         where: { id: (await prisma.deployement.findUnique({ where: { id: deploymentId } })).projectId }
                                     })
 
-                                    const deploymentUrl = `https://${deploymentProject.subDomain}.nexuscloud.app`
+                                    const deploymentUrl = buildDeploymentUrl(deploymentProject.subDomain)
                                     console.log(`✅ Deployment ${deploymentId} completed successfully and is now LIVE`)
                                     console.log(`🌐 Deployment URL: ${deploymentUrl}`)
                                 } else {
@@ -287,7 +294,7 @@ async function getDeploymentUrl(deploymentId, userId) {
         throw error
     }
 
-    const deploymentUrl = `https://${deployment.project.subDomain}.nexuscloud.app`
+    const deploymentUrl = buildDeploymentUrl(deployment.project.subDomain)
 
     return {
         deploymentId: deployment.id,
@@ -399,7 +406,7 @@ async function deleteDeployment(deploymentId, userId) {
     // This is done before database deletion in case it fails
     // We log the failure but continue with database deletion
     const s3DeleteSuccess = await deleteDeploymentFromS3(deploymentId, deployment.project.subDomain)
-    
+
     if (!s3DeleteSuccess) {
         console.warn(`⚠️ S3 deletion failed for deployment ${deploymentId}, but continuing with database deletion`)
     }

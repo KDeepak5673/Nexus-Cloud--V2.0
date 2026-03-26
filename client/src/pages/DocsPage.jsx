@@ -173,7 +173,7 @@ function DocsPage() {
                 <div className="step-number">2</div>
                 <div className="step-content">
                   <h4>Configure Project Details</h4>
-                  <p><strong>Project Name:</strong> Select a unique identifier that will be used for your subdomain (e.g., "my-app" becomes my-app.localhost:8000).</p>
+                  <p><strong>Project Name:</strong> Select a unique identifier that will be used for your subdomain (e.g., "my-app" becomes my-app.nexus-cloud.tech).</p>
                   <p><strong>GitHub URL:</strong> Provide the complete repository URL (format: https://github.com/username/repository).</p>
                 </div>
               </div>
@@ -434,7 +434,7 @@ function DocsPage() {
             <h3>URL Structure</h3>
             <p>All deployed projects are accessible via the following URL format:</p>
             <div className="code-block">
-              <code>http://[project-name].localhost:8000</code>
+              <code>https://[project-name].nexus-cloud.tech</code>
             </div>
 
             <h3>URL System Features</h3>
@@ -736,13 +736,13 @@ function DocsPage() {
             <div className="troubleshoot-section">
               <h3>Project URL Not Accessible</h3>
               <div className="troubleshoot-content">
-                <p><strong>Symptoms:</strong> Cannot access project at subdomain.localhost:8000</p>
+                <p><strong>Symptoms:</strong> Cannot access project at subdomain.nexus-cloud.tech</p>
                 <p><strong>Resolution Steps:</strong></p>
                 <ul>
                   <li>Confirm deployment status shows READY (not IN_PROGRESS or QUEUED)</li>
                   <li>Verify S3 reverse proxy is running on port 8000 (check terminal)</li>
                   <li>Ensure subdomain format matches project name exactly (check project card)</li>
-                  <li>Try accessing http://[project-name].localhost:8000 in browser</li>
+                  <li>Try accessing https://[project-name].nexus-cloud.tech in browser</li>
                   <li>Clear browser cache and cookies, then try again</li>
                   <li>Check browser console for CORS or network errors</li>
                   <li>Verify S3 bucket contains files under the project subdomain prefix</li>
@@ -936,7 +936,7 @@ function DocsPage() {
               <li><strong>Build Trigger:</strong> ECS task launched with Docker container listening to Kafka</li>
               <li><strong>Build Execution:</strong> Container clones repo, installs deps, runs build, uploads to S3</li>
               <li><strong>Log Streaming:</strong> Build logs sent to Kafka → ClickHouse + Socket.io → Frontend</li>
-              <li><strong>DNS Resolution:</strong> S3 reverse proxy routes subdomain.localhost:8000 to S3 objects</li>
+              <li><strong>DNS Resolution:</strong> S3 reverse proxy routes subdomain.nexus-cloud.tech to S3 objects</li>
               <li><strong>User Access:</strong> Deployed application served from S3 via reverse proxy</li>
             </ol>
 
