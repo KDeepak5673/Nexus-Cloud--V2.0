@@ -71,9 +71,6 @@ async function resolveSubdomain(subdomain) {
         },
         include: {
             Deployement: {
-                where: {
-                    status: 'READY'
-                },
                 orderBy: {
                     createdAt: 'desc'
                 },
@@ -90,6 +87,12 @@ async function resolveSubdomain(subdomain) {
 
     if (!project.Deployement || project.Deployement.length === 0) {
         const error = new Error('No active deployment found for this project')
+        error.statusCode = 404
+        throw error
+    }
+
+    if (project.Deployement[0].status !== 'READY') {
+        const error = new Error('Latest deployment is not active for this project')
         error.statusCode = 404
         throw error
     }
@@ -333,7 +336,10 @@ async function getRecentDeployments(userId, limit = 10) {
             projectName: d.project.name,
             status: d.status,
             createdAt: d.createdAt,
-            deploymentTime: d.deploymentTime
+            finishedAt: d.finishedAt,
+            deploymentTime: d.deploymentTime !== null
+                ? d.deploymentTime
+                : (d.finishedAt ? Math.max(0, Math.round((new Date(d.finishedAt) - new Date(d.createdAt)) / 1000)) : null)
         }))
     } catch (error) {
         console.error('Error getting recent deployments:', error)

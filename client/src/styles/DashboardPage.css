@@ -284,15 +284,29 @@
 
 .projects-grid-modern {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - 4.5rem) / 4);
     gap: 1.5rem;
     margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scroll-snap-type: x mandatory;
 }
 
 @media (max-width: 768px) {
     .projects-grid-modern {
-        grid-template-columns: 1fr;
+        grid-auto-columns: calc((100% - 1.5rem) / 2);
     }
+}
+
+@media (max-width: 540px) {
+    .projects-grid-modern {
+        grid-auto-columns: 100%;
+    }
+}
+
+.projects-grid-modern>* {
+    scroll-snap-align: start;
 }
 
 /* Show more section */

@@ -69,9 +69,27 @@ async function updateProjectConfig(req, res, next) {
     }
 }
 
+async function deleteProject(req, res, next) {
+    try {
+        const { projectId } = req.params
+        const userId = req.user.id
+        const { confirmProjectName } = req.body
+
+        await projectService.deleteProject(projectId, userId, confirmProjectName)
+
+        return res.json({
+            status: 'success',
+            message: 'Project deleted successfully'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
 module.exports = {
     createProject,
     getProjects,
     getProjectById,
-    updateProjectConfig
+    updateProjectConfig,
+    deleteProject
 }

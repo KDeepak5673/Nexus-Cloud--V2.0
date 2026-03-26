@@ -60,6 +60,11 @@ async function getUserWithProjects(firebaseUid) {
                     Deployement: {
                         orderBy: { createdAt: 'desc' },
                         take: 1  // Only latest deployment
+                    },
+                    _count: {
+                        select: {
+                            Deployement: true
+                        }
                     }
                 }
             }

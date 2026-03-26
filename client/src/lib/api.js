@@ -60,8 +60,21 @@ export async function getUserProfile(firebaseUid) {
     return request(`/auth/user/${firebaseUid}`)
 }
 
-export async function deployProjectById(projectId) {
-    return request(`/api/projects/${projectId}/deploy`, { method: 'POST' })
+export async function deployProjectById(projectId, mode = 'latest') {
+    const payload = {
+        method: 'POST',
+        body: JSON.stringify({ mode })
+    }
+
+    // Primary route from Express mount: /projects/:projectId/deploy
+    let response = await request(`/projects/${projectId}/deploy`, payload)
+
+    // Backward-compatible fallback when API is mounted under /api/projects
+    if (response?.message?.includes('Route not found')) {
+        response = await request(`/api/projects/${projectId}/deploy`, payload)
+    }
+
+    return response
 }
 
 export async function getDeploymentStatus(deploymentId) {
@@ -167,6 +180,23 @@ export async function deleteDeployment(deploymentId) {
     })
 }
 
+export async function deleteProject(projectId, confirmProjectName) {
+    const payload = {
+        method: 'DELETE',
+        body: JSON.stringify({ confirmProjectName })
+    }
+
+    // Primary route from Express mount: /projects/:projectId
+    let response = await request(`/projects/${projectId}`, payload)
+
+    // Backward-compatible fallback when API is mounted under /api/projects
+    if (response?.message?.includes('Route not found')) {
+        response = await request(`/api/projects/${projectId}`, payload)
+    }
+
+    return response
+}
+
 export async function getDashboardStats() {
     return request('/api/dashboard/stats')
 }
@@ -212,6 +242,7 @@ export default {
     getBillingAdjustments,
     createBillingAdjustment,
     deleteDeployment,
+    deleteProject,
     getDashboardStats,
     getDeploymentActivity,
     getSuccessFailureTrend,

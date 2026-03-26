@@ -3,9 +3,10 @@ const deploymentService = require('../services/deployment.service')
 async function createDeployment(req, res, next) {
     try {
         const { projectId } = req.body
+        const mode = req.body?.mode || 'latest'
         const userId = req.user.id
 
-        const deployment = await deploymentService.createDeployment(projectId, userId)
+        const deployment = await deploymentService.createDeployment(projectId, userId, { mode })
 
         return res.json({
             status: 'queued',
@@ -19,14 +20,16 @@ async function createDeployment(req, res, next) {
 async function deployProject(req, res, next) {
     try {
         const { projectId } = req.params
+        const mode = req.body?.mode || 'latest'
         const userId = req.user.id
 
-        const deployment = await deploymentService.createDeployment(projectId, userId)
+        const deployment = await deploymentService.createDeployment(projectId, userId, { mode })
 
         return res.json({
             message: 'Deployment started',
             deploymentId: deployment.id,
-            status: deployment.status
+            status: deployment.status,
+            mode
         })
     } catch (error) {
         next(error)

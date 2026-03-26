@@ -10,6 +10,15 @@ function buildDeploymentUrl(subDomain) {
     return `${DEPLOYMENT_URL_PROTOCOL}://${subDomain}.${DEPLOYMENT_BASE_DOMAIN}`
 }
 
+function buildCompletionMetrics(createdAt) {
+    const finishedAt = new Date()
+    const deploymentTime = createdAt
+        ? Math.max(0, Math.round((finishedAt.getTime() - new Date(createdAt).getTime()) / 1000))
+        : null
+
+    return { finishedAt, deploymentTime }
+}
+
 async function initKafkaConsumer() {
     try {
         console.log('🔄 Attempting to connect to Kafka...')
@@ -47,9 +56,19 @@ async function initKafkaConsumer() {
                             console.log(`🎉 Deployment ${DEPLOYEMENT_ID} completed! Updating status to READY...`)
 
                             try {
+                                const existingDeployment = await prisma.deployement.findUnique({
+                                    where: { id: DEPLOYEMENT_ID },
+                                    select: { createdAt: true }
+                                })
+                                const completionMetrics = buildCompletionMetrics(existingDeployment?.createdAt)
+
                                 await prisma.deployement.update({
                                     where: { id: DEPLOYEMENT_ID },
-                                    data: { status: 'READY' }
+                                    data: {
+                                        status: 'READY',
+                                        finishedAt: completionMetrics.finishedAt,
+                                        deploymentTime: completionMetrics.deploymentTime
+                                    }
                                 })
 
                                 const deployment = await prisma.deployement.findUnique({
@@ -81,9 +100,19 @@ async function initKafkaConsumer() {
                             console.log(`❌ Deployment ${DEPLOYEMENT_ID} failed! Updating status to FAIL...`)
 
                             try {
+                                const existingDeployment = await prisma.deployement.findUnique({
+                                    where: { id: DEPLOYEMENT_ID },
+                                    select: { createdAt: true }
+                                })
+                                const completionMetrics = buildCompletionMetrics(existingDeployment?.createdAt)
+
                                 await prisma.deployement.update({
                                     where: { id: DEPLOYEMENT_ID },
-                                    data: { status: 'FAIL' }
+                                    data: {
+                                        status: 'FAIL',
+                                        finishedAt: completionMetrics.finishedAt,
+                                        deploymentTime: completionMetrics.deploymentTime
+                                    }
                                 })
                                 console.log(`❌ Deployment ${DEPLOYEMENT_ID} marked as FAILED`)
 

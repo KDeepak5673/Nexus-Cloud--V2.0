@@ -23,6 +23,9 @@ router.get('/:id', projectController.getProjectById)
 // PATCH /projects/:projectId/config - Update project configuration
 router.patch('/:projectId/config', requireAuth, projectController.updateProjectConfig)
 
+// DELETE /projects/:projectId - Delete project and all related deployments/artifacts
+router.delete('/:projectId', requireAuth, projectController.deleteProject)
+
 // POST /projects/:projectId/deploy - Deploy a project
 router.post('/:projectId/deploy', requireAuth, deploymentController.deployProject)
 

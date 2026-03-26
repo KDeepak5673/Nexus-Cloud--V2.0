@@ -16,38 +16,52 @@ const S3_BUCKET = process.env.AWS_S3_BUCKET || 'nexus-cloud-v2.0'
  * This removes all files under the deployment prefix
  * 
  * @param {string} deploymentId - The deployment ID
- * @param {string} subDomain - The project's subdomain
+ * @param {string} subDomain - The project's subdomain (legacy fallback)
+ * @param {string} projectId - The project ID (preferred for __outputs prefix)
  * @returns {Promise<boolean>} - True if deletion was successful
  */
-async function deleteDeploymentFromS3(deploymentId, subDomain) {
+async function deleteDeploymentFromS3(deploymentId, subDomain, projectId) {
     try {
         console.log(`🗑️ Starting S3 cleanup for deployment: ${deploymentId}`)
 
-        // List all objects under the subdomain prefix
-        const listCommand = new ListObjectsV2Command({
-            Bucket: S3_BUCKET,
-            Prefix: `${subDomain}/`
-        })
+        const prefixes = [
+            projectId ? `__outputs/${projectId}/` : null,
+            projectId ? `${projectId}/` : null,
+            subDomain ? `${subDomain}/` : null
+        ].filter(Boolean)
 
-        const listResponse = await s3Client.send(listCommand)
+        let deletedObjects = 0
 
-        if (!listResponse.Contents || listResponse.Contents.length === 0) {
-            console.log(`ℹ️ No files found in S3 for subdomain: ${subDomain}`)
+        for (const prefix of prefixes) {
+            const listCommand = new ListObjectsV2Command({
+                Bucket: S3_BUCKET,
+                Prefix: prefix
+            })
+
+            const listResponse = await s3Client.send(listCommand)
+
+            if (!listResponse.Contents || listResponse.Contents.length === 0) {
+                continue
+            }
+
+            const deletePromises = listResponse.Contents.map(object => {
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: S3_BUCKET,
+                    Key: object.Key
+                })
+                return s3Client.send(deleteCommand)
+            })
+
+            await Promise.all(deletePromises)
+            deletedObjects += listResponse.Contents.length
+        }
+
+        if (deletedObjects === 0) {
+            console.log(`ℹ️ No files found in S3 for deployment cleanup. projectId=${projectId || 'n/a'} subDomain=${subDomain || 'n/a'}`)
             return true
         }
 
-        // Delete all objects
-        const deletePromises = listResponse.Contents.map(object => {
-            const deleteCommand = new DeleteObjectCommand({
-                Bucket: S3_BUCKET,
-                Key: object.Key
-            })
-            return s3Client.send(deleteCommand)
-        })
-
-        await Promise.all(deletePromises)
-
-        console.log(`✅ Successfully deleted ${listResponse.Contents.length} files from S3 for deployment: ${deploymentId}`)
+        console.log(`✅ Successfully deleted ${deletedObjects} files from S3 for deployment: ${deploymentId}`)
         return true
     } catch (error) {
         console.error(`❌ Error deleting deployment from S3: ${error.message}`)

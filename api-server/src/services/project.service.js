@@ -1,6 +1,7 @@
 const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
 const { getPrimaryBillingAccountForUser } = require('./billing-account.service')
+const { deleteDeploymentFromS3 } = require('../utils/s3')
 
 const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
 const DEPLOYMENT_URL_PROTOCOL = (process.env.DEPLOYMENT_URL_PROTOCOL || 'https').trim()
@@ -213,9 +214,10 @@ async function getProjectById(projectId) {
     // Add deployment URLs for READY deployments
     const projectWithUrls = {
         ...project,
-        Deployement: project.Deployement.map(deployment => ({
+        Deployement: project.Deployement.map((deployment, index) => ({
             ...deployment,
-            url: deployment.status === 'READY'
+            // Only the most recent deployment can be considered live.
+            url: index === 0 && deployment.status === 'READY'
                 ? buildDeploymentUrl(project.subDomain)
                 : null
         }))
@@ -266,10 +268,62 @@ async function updateProjectConfig(projectId, userId, config) {
     return updatedProject
 }
 
+async function deleteProject(projectId, userId, confirmProjectName) {
+    const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+            Deployement: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+            }
+        }
+    })
+
+    if (!project) {
+        const error = new Error('Project not found')
+        error.statusCode = 404
+        throw error
+    }
+
+    if (project.userId !== userId) {
+        const error = new Error('Access denied')
+        error.statusCode = 403
+        throw error
+    }
+
+    if (!confirmProjectName || confirmProjectName !== project.name) {
+        const error = new Error('Project name confirmation does not match')
+        error.statusCode = 400
+        throw error
+    }
+
+    // Delete currently hosted website artifacts from S3 before DB cleanup.
+    if (project.Deployement?.[0]?.id) {
+        const s3DeleteSuccess = await deleteDeploymentFromS3(project.Deployement[0].id, project.subDomain, project.id)
+        if (!s3DeleteSuccess) {
+            console.warn(`⚠️ S3 cleanup failed for project ${projectId}, continuing database deletion`)
+        }
+    }
+
+    await prisma.$transaction([
+        prisma.usageAggregateHourly.deleteMany({ where: { projectId } }),
+        prisma.usageAggregateDaily.deleteMany({ where: { projectId } }),
+        prisma.usageAggregateMonthly.deleteMany({ where: { projectId } }),
+        prisma.usageEventRaw.deleteMany({ where: { projectId } }),
+        prisma.invoiceLineItem.deleteMany({ where: { projectId } }),
+        prisma.billingAdjustment.deleteMany({ where: { projectId } }),
+        prisma.deployement.deleteMany({ where: { projectId } }),
+        prisma.project.delete({ where: { id: projectId } })
+    ])
+
+    return { success: true }
+}
+
 module.exports = {
     validateGitHubRepository,
     createProject,
     getUserProjects,
     getProjectById,
-    updateProjectConfig
+    updateProjectConfig,
+    deleteProject
 }

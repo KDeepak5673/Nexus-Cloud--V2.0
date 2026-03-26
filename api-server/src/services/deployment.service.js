@@ -9,6 +9,15 @@ function buildDeploymentUrl(subDomain) {
     return `${DEPLOYMENT_URL_PROTOCOL}://${subDomain}.${DEPLOYMENT_BASE_DOMAIN}`
 }
 
+function buildCompletionMetrics(createdAt) {
+    const finishedAt = new Date()
+    const deploymentTime = createdAt
+        ? Math.max(0, Math.round((finishedAt.getTime() - new Date(createdAt).getTime()) / 1000))
+        : null
+
+    return { finishedAt, deploymentTime }
+}
+
 const ecsClient = new ECSClient({
     region: process.env.AWS_REGION || 'ap-south-1',
     credentials: {
@@ -65,7 +74,9 @@ async function validateGitHubRepository(gitURL) {
     }
 }
 
-async function createDeployment(projectId, userId) {
+async function createDeployment(projectId, userId, options = {}) {
+    const mode = options?.mode === 'redeploy' ? 'redeploy' : 'latest'
+
     const project = await prisma.project.findUnique({
         where: { id: projectId }
     })
@@ -108,7 +119,7 @@ async function createDeployment(projectId, userId) {
         }
     })
 
-    console.log(`🚀 New deployment created: ${deployment.id} for project: ${project.name}`)
+    console.log(`🚀 New deployment created: ${deployment.id} for project: ${project.name} (mode: ${mode})`)
 
     // Prepare environment variables for ECS task
     const projectEnvs = JSON.stringify(project.env || {})
@@ -194,10 +205,19 @@ async function startDeploymentSimulation(deploymentId) {
                             try {
                                 const validationSuccess = Math.random() > 0.05
                                 const finalStatus = validationSuccess ? 'READY' : 'FAIL'
+                                const deploymentMeta = await prisma.deployement.findUnique({
+                                    where: { id: deploymentId },
+                                    select: { createdAt: true }
+                                })
+                                const completionMetrics = buildCompletionMetrics(deploymentMeta?.createdAt)
 
                                 await prisma.deployement.update({
                                     where: { id: deploymentId },
-                                    data: { status: finalStatus }
+                                    data: {
+                                        status: finalStatus,
+                                        finishedAt: completionMetrics.finishedAt,
+                                        deploymentTime: completionMetrics.deploymentTime
+                                    }
                                 })
 
                                 if (finalStatus === 'READY') {
@@ -222,7 +242,13 @@ async function startDeploymentSimulation(deploymentId) {
                     } else {
                         await prisma.deployement.update({
                             where: { id: deploymentId },
-                            data: { status: 'FAIL' }
+                            data: {
+                                status: 'FAIL',
+                                ...buildCompletionMetrics((await prisma.deployement.findUnique({
+                                    where: { id: deploymentId },
+                                    select: { createdAt: true }
+                                }))?.createdAt)
+                            }
                         })
                         console.log(`❌ Deployment ${deploymentId} failed during build phase`)
                     }
@@ -230,7 +256,13 @@ async function startDeploymentSimulation(deploymentId) {
                     console.error('Error during deployment completion:', error)
                     await prisma.deployement.update({
                         where: { id: deploymentId },
-                        data: { status: 'FAIL' }
+                        data: {
+                            status: 'FAIL',
+                            ...buildCompletionMetrics((await prisma.deployement.findUnique({
+                                where: { id: deploymentId },
+                                select: { createdAt: true }
+                            }))?.createdAt)
+                        }
                     }).catch(err => console.error('Critical: Could not update deployment to FAIL status:', err))
                 }
             }, deploymentTime)
@@ -238,7 +270,13 @@ async function startDeploymentSimulation(deploymentId) {
             console.error('Error updating deployment to IN_PROGRESS:', error)
             await prisma.deployement.update({
                 where: { id: deploymentId },
-                data: { status: 'FAIL' }
+                data: {
+                    status: 'FAIL',
+                    ...buildCompletionMetrics((await prisma.deployement.findUnique({
+                        where: { id: deploymentId },
+                        select: { createdAt: true }
+                    }))?.createdAt)
+                }
             }).catch(err => console.error('Critical: Could not update deployment to FAIL status:', err))
         }
     }, 2000)
@@ -331,9 +369,21 @@ async function updateDeploymentStatus(deploymentId, status) {
         throw error
     }
 
+    const existingDeployment = await prisma.deployement.findUnique({
+        where: { id: deploymentId },
+        select: { createdAt: true }
+    })
+
+    const shouldSetCompletionMetrics = status === 'READY' || status === 'FAIL'
+
     const deployment = await prisma.deployement.update({
         where: { id: deploymentId },
-        data: { status },
+        data: shouldSetCompletionMetrics
+            ? {
+                status,
+                ...buildCompletionMetrics(existingDeployment?.createdAt)
+            }
+            : { status },
         include: {
             project: true
         }
@@ -366,10 +416,15 @@ async function simulateDeploymentProcess(deploymentId) {
                 try {
                     const success = Math.random() > 0.2
                     const finalStatus = success ? 'READY' : 'FAIL'
+                    const completionMetrics = buildCompletionMetrics(deployment.createdAt)
 
                     await prisma.deployement.update({
                         where: { id: deploymentId },
-                        data: { status: finalStatus }
+                        data: {
+                            status: finalStatus,
+                            finishedAt: completionMetrics.finishedAt,
+                            deploymentTime: completionMetrics.deploymentTime
+                        }
                     })
                     console.log(`Deployment ${deploymentId} completed with status: ${finalStatus}`)
                 } catch (error) {
@@ -402,12 +457,20 @@ async function deleteDeployment(deploymentId, userId) {
         throw error
     }
 
-    // Delete deployment artifacts from S3
-    // This is done before database deletion in case it fails
-    // We log the failure but continue with database deletion
-    const s3DeleteSuccess = await deleteDeploymentFromS3(deploymentId, deployment.project.subDomain)
+    const latestDeployment = await prisma.deployement.findFirst({
+        where: { projectId: deployment.projectId },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true }
+    })
 
-    if (!s3DeleteSuccess) {
+    const isDeletingLatest = latestDeployment?.id === deploymentId
+
+    // Only latest deployment controls active website assets; clear those from S3.
+    const s3DeleteSuccess = isDeletingLatest
+        ? await deleteDeploymentFromS3(deploymentId, deployment.project.subDomain, deployment.projectId)
+        : true
+
+    if (isDeletingLatest && !s3DeleteSuccess) {
         console.warn(`⚠️ S3 deletion failed for deployment ${deploymentId}, but continuing with database deletion`)
     }
 
@@ -416,8 +479,21 @@ async function deleteDeployment(deploymentId, userId) {
         where: { id: deploymentId }
     })
 
+    if (isDeletingLatest) {
+        // Keep project inactive after deleting latest deployment.
+        await prisma.deployement.updateMany({
+            where: {
+                projectId: deployment.projectId,
+                status: 'READY'
+            },
+            data: {
+                status: 'NOT_STARTED'
+            }
+        })
+    }
+
     console.log(`✅ Deployment ${deploymentId} deleted successfully from database and S3`)
-    return { success: true, s3Cleaned: s3DeleteSuccess }
+    return { success: true, s3Cleaned: s3DeleteSuccess, projectInactive: isDeletingLatest }
 }
 
 module.exports = {

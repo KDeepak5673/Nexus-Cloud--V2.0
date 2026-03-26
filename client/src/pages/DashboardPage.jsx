@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import ProjectCard from '../components/ProjectCard'
 import DeploymentTable from '../components/DeploymentTable'
-import { 
-  getProjects, 
-  getDeployments,
+import {
+  getProjects,
   getDashboardStats,
   getDeploymentActivity,
   getSuccessFailureTrend,
-  getRecentDeployments 
+  getRecentDeployments
 } from '../lib/api.js'
 import '../styles/DashboardPage.css';
 import {
@@ -33,8 +32,8 @@ function MetricCard({ label, value, change, trend, iconType }) {
 
   const getIcon = () => {
     const iconProps = { width: 24, height: 24, stroke: "currentColor", fill: "none", strokeWidth: 2 }
-    
-    switch(iconType) {
+
+    switch (iconType) {
       case 'projects':
         return (
           <svg {...iconProps} viewBox="0 0 24 24">
@@ -135,6 +134,7 @@ function DashboardPage() {
   const { user } = useAuth()
   const [projects, setProjects] = useState([])
   const [deployments, setDeployments] = useState([])
+  const [deploymentHistory, setDeploymentHistory] = useState([])
   const [dashboardStats, setDashboardStats] = useState({
     totalDeployments: 0,
     successfulDeployments: 0,
@@ -147,7 +147,6 @@ function DashboardPage() {
   const [trendData, setTrendData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showAllProjects, setShowAllProjects] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -161,13 +160,13 @@ function DashboardPage() {
       // Fetch all dashboard data in parallel
       const [
         projectsResponse,
-        deploymentsResponse,
+        recentDeploymentsResponse,
         statsResponse,
         activityResponse,
         trendResponse
       ] = await Promise.all([
         getProjects(),
-        getDeployments(),
+        getRecentDeployments(50),
         getDashboardStats(),
         getDeploymentActivity(),
         getSuccessFailureTrend()
@@ -187,18 +186,24 @@ function DashboardPage() {
         setProjects(transformedProjects)
       }
 
-      // Transform and set deployments
-      if (deploymentsResponse?.status === 'success') {
-        const transformedDeployments = deploymentsResponse.data.deployments.map(deployment => ({
+      // Transform and set recent deployments (use DB-backed dashboard endpoint)
+      if (recentDeploymentsResponse?.status === 'success') {
+        const transformedDeployments = recentDeploymentsResponse.data.recentDeployments.map(deployment => ({
           id: deployment.id,
-          project: deployment.project.name,
+          project: deployment.projectName,
           status: getDeploymentStatus(deployment.status),
           statusDisplay: deployment.status,
           timestamp: getTimeAgo(deployment.createdAt),
           createdAt: deployment.createdAt,
+          finishedAt: deployment.finishedAt || null,
+          deploymentTime: deployment.deploymentTime,
+          durationMinutes: typeof deployment.deploymentTime === 'number'
+            ? Math.max(1, Math.round(deployment.deploymentTime / 60))
+            : null,
           projectId: deployment.projectId
         }))
-        setDeployments(transformedDeployments)
+        setDeploymentHistory(transformedDeployments)
+        setDeployments(transformedDeployments.slice(0, 8))
       }
 
       // Set dashboard stats
@@ -248,9 +253,9 @@ function DashboardPage() {
   }
 
   // Get success vs failure trend - using API data with proper formatting
-  const getSuccessFailureTrend = () => {
+  const formatSuccessFailureTrend = () => {
     if (trendData.length === 0) return []
-    
+
     return trendData.map(d => {
       const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })
       return {
@@ -272,25 +277,34 @@ function DashboardPage() {
       const date = new Date(today)
       date.setDate(today.getDate() - i)
       date.setHours(0, 0, 0, 0)
-      
+
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
       durationByDay[dayName] = { count: 0, total: 0, day: dayName }
     }
 
-    // Calculate actual durations from deployments
-    if (deployments.length > 0) {
-      deployments.forEach(deployment => {
+    // Calculate actual durations from database-backed deployment durations.
+    if (deploymentHistory.length > 0) {
+      deploymentHistory.forEach(deployment => {
         if (deployment.createdAt) {
           const depDate = new Date(deployment.createdAt)
           depDate.setHours(0, 0, 0, 0)
-          
+
           const dayName = depDate.toLocaleDateString('en-US', { weekday: 'short' })
-          
+
           if (durationByDay[dayName]) {
-            // Mock duration calculation - in real scenario this would come from DB
-            const duration = Math.floor(Math.random() * 15) + 5 // 5-20 minutes
-            durationByDay[dayName].total += duration
-            durationByDay[dayName].count += 1
+            let duration = deployment.durationMinutes
+
+            if ((duration === null || duration === undefined) && deployment.finishedAt) {
+              const createdAt = new Date(deployment.createdAt)
+              const finishedAt = new Date(deployment.finishedAt)
+              const computedMinutes = Math.round((finishedAt - createdAt) / (1000 * 60))
+              duration = Number.isFinite(computedMinutes) && computedMinutes > 0 ? computedMinutes : null
+            }
+
+            if (typeof duration === 'number' && duration > 0) {
+              durationByDay[dayName].total += duration
+              durationByDay[dayName].count += 1
+            }
           }
         }
       })
@@ -299,14 +313,14 @@ function DashboardPage() {
     // Calculate averages and format for chart
     return Object.values(durationByDay).map(item => ({
       day: item.day,
-      duration: item.count > 0 ? Math.round(item.total / item.count) : dashboardStats.averageDeploymentTime || 5
+      duration: item.count > 0 ? Math.round(item.total / item.count) : (dashboardStats.averageDeploymentTime || 0)
     }))
   }
 
   // Get most active projects
   const getMostActiveProjects = () => {
     const projectActivity = projects.map(project => {
-      const projectDeployments = deployments.filter(d => d.projectId === project.id).length
+      const projectDeployments = deploymentHistory.filter(d => d.projectId === project.id).length
       return { ...project, deploymentCount: projectDeployments }
     })
     return projectActivity.sort((a, b) => b.deploymentCount - a.deploymentCount).slice(0, 5)
@@ -467,24 +481,7 @@ function DashboardPage() {
             Monitor your projects, track deployments, and analyze performance metrics in real-time
           </p>
         </div>
-        <div className="header-actions">
-          <button className="btn-icon" title="Download Report">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </button>
-          <button className="btn-icon" title="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 1v6m0 6v6"></path>
-              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
-              <path d="M1 12h6m6 0h6"></path>
-              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
-            </svg>
-          </button>
-        </div>
+
       </header>
 
       <div className="dashboard-content">
@@ -530,7 +527,7 @@ function DashboardPage() {
             description="Deployment success rate over time"
           >
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getSuccessFailureTrend()} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
+              <BarChart data={formatSuccessFailureTrend()} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} vertical={false} />
                 <XAxis dataKey="day" stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Day', position: 'bottom', offset: 0 }} />
                 <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} label={{ value: 'Deployments', angle: -90, position: 'insideLeft' }} />
@@ -578,7 +575,7 @@ function DashboardPage() {
             <h2 className="section-title">Project Insights</h2>
             <p className="section-subtitle">Analyze project distribution and activity</p>
           </div>
-          
+
           <div className="charts-row">
             <ChartCard
               title="ENVIRONMENT DISTRIBUTION"
@@ -640,7 +637,7 @@ function DashboardPage() {
             <h2 className="section-title">System Health</h2>
             <p className="section-subtitle">Real-time infrastructure status</p>
           </div>
-          
+
           <div className="system-health-grid">
             <div className="health-card">
               <div className="health-icon-svg">
@@ -717,7 +714,7 @@ function DashboardPage() {
             <h2 className="section-title">Quick Actions</h2>
             <p className="section-subtitle">Common tasks and shortcuts</p>
           </div>
-          
+
           <div className="quick-actions-grid">
             <button className="quick-action-btn" onClick={() => window.appState.setPage('new-project')}>
               <div className="action-icon-svg">
@@ -780,31 +777,10 @@ function DashboardPage() {
           </div>
 
           <div className="projects-grid-modern">
-            {(showAllProjects ? projects : projects.slice(0, 4)).map((project, index) => (
+            {projects.map((project, index) => (
               <ProjectCard key={index} {...project} />
             ))}
           </div>
-
-          {projects.length > 4 && (
-            <div className="show-more-section">
-              <button
-                className="btn-modern btn-outline"
-                onClick={() => setShowAllProjects(!showAllProjects)}
-              >
-                {showAllProjects ? (
-                  <>
-                    <span>Show Less</span>
-                    <span className="btn-arrow">↑</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Show All Projects ({projects.length - 4} more)</span>
-                    <span className="btn-arrow">→</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Deployments Section */}
@@ -814,8 +790,8 @@ function DashboardPage() {
             <p className="section-subtitle">Track your latest deployment activities and status</p>
           </div>
           <div className="deployments-table-wrapper">
-            <DeploymentTable 
-              deployments={deployments} 
+            <DeploymentTable
+              deployments={deployments}
               onDeleteSuccess={(deploymentId) => {
                 setDeployments(deployments.filter(d => d.id !== deploymentId))
               }}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { deployProjectById, getProject, getLogs, updateProjectConfig } from '../lib/api'
+import { deployProjectById, getProject, getLogs, updateProjectConfig, deleteDeployment, deleteProject } from '../lib/api'
 import { getProjectUrl } from '../lib/utils.js'
 import ProjectConfigModal from '../components/ProjectConfigModal.jsx'
 import '../styles/ProjectDetails.css'
@@ -102,6 +102,17 @@ function ProjectDetailsPage({ projectId }) {
     const [allDeploymentLogs, setAllDeploymentLogs] = useState([])
     const [detectedConfig, setDetectedConfig] = useState(null)
     const [applyingDetectedConfig, setApplyingDetectedConfig] = useState(false)
+    const [deployActionLoading, setDeployActionLoading] = useState(false)
+    const [deleteLatestLoading, setDeleteLatestLoading] = useState(false)
+    const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false)
+    const [deleteProjectConfirmText, setDeleteProjectConfirmText] = useState('')
+    const [deleteProjectLoading, setDeleteProjectLoading] = useState(false)
+    const [actionError, setActionError] = useState('')
+    const [showActionsMenu, setShowActionsMenu] = useState(false)
+    const [showDeleteLatestDialog, setShowDeleteLatestDialog] = useState(false)
+    const [showInfoDialog, setShowInfoDialog] = useState(false)
+    const [infoDialogTitle, setInfoDialogTitle] = useState('Notice')
+    const [infoDialogMessage, setInfoDialogMessage] = useState('')
 
     useEffect(() => {
         if (projectId) {
@@ -249,20 +260,94 @@ function ProjectDetailsPage({ projectId }) {
         setExpandedView(!expandedView)
     }
 
-    const handleRetryDeployment = async () => {
+    const openInfoDialog = (title, message) => {
+        setInfoDialogTitle(title)
+        setInfoDialogMessage(message)
+        setShowInfoDialog(true)
+    }
+
+    const handleStartDeployment = async (mode = 'latest') => {
         try {
-            const response = await deployProjectById(projectId)
+            if (mode === 'redeploy' && deployments.length === 0) {
+                openInfoDialog('Redeploy unavailable', 'No previous deployment found to redeploy.')
+                return
+            }
+
+            setDeployActionLoading(true)
+            setActionError('')
+            setShowActionsMenu(false)
+
+            const response = await deployProjectById(projectId, mode)
 
             if (response?.message || response?.status === 'queued') {
-                alert('New deployment started successfully!')
+                openInfoDialog('Deployment started', mode === 'redeploy'
+                    ? 'Redeploy started successfully.'
+                    : 'Deploy latest commit started successfully.')
                 // Refresh project details to show new deployment
                 fetchProjectDetails()
             } else {
-                alert(`Failed to start deployment: ${response?.error || 'Unknown error'}`)
+                openInfoDialog('Deployment failed to start', response?.error || 'Unknown error')
             }
         } catch (error) {
             console.error('Error starting deployment:', error)
-            alert('Error starting deployment. Please try again.')
+            setActionError('Error starting deployment. Please try again.')
+        } finally {
+            setDeployActionLoading(false)
+        }
+    }
+
+    const handleDeleteLatestDeployment = async () => {
+        if (!deployments.length) return
+
+        try {
+            setDeleteLatestLoading(true)
+            setActionError('')
+            setShowDeleteLatestDialog(false)
+            setShowActionsMenu(false)
+
+            const latestDeployment = deployments[0]
+
+            const response = await deleteDeployment(latestDeployment.id)
+            if (response?.success) {
+                await fetchProjectDetails()
+                openInfoDialog('Latest deployment deleted', 'Project is now inactive until the next deployment.')
+            } else {
+                setActionError(response?.message || 'Failed to delete latest deployment.')
+            }
+        } catch (error) {
+            console.error('Error deleting latest deployment:', error)
+            setActionError('Failed to delete latest deployment.')
+        } finally {
+            setDeleteLatestLoading(false)
+        }
+    }
+
+    const handleDeleteProject = async () => {
+        if (!project) return
+
+        if (deleteProjectConfirmText !== project.name) {
+            setActionError('Project name does not match. Please type exact project name to confirm deletion.')
+            return
+        }
+
+        try {
+            setDeleteProjectLoading(true)
+            setActionError('')
+            setShowActionsMenu(false)
+
+            const response = await deleteProject(project.id, deleteProjectConfirmText)
+
+            if (response?.status === 'success') {
+                setShowDeleteProjectModal(false)
+                window.appState.setPage('dashboard')
+            } else {
+                setActionError(response?.error || 'Failed to delete project.')
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error)
+            setActionError('Failed to delete project.')
+        } finally {
+            setDeleteProjectLoading(false)
         }
     }
 
@@ -282,14 +367,14 @@ function ProjectDetailsPage({ projectId }) {
 
             if (response?.status === 'success') {
                 setProject(response.data.project)
-                alert('Detected framework configuration applied successfully.')
+                openInfoDialog('Configuration applied', 'Detected framework configuration applied successfully.')
                 fetchProjectDetails()
             } else {
-                alert(response?.error || 'Failed to apply detected configuration')
+                openInfoDialog('Configuration failed', response?.error || 'Failed to apply detected configuration')
             }
         } catch (error) {
             console.error('Error applying detected config:', error)
-            alert('Failed to apply detected configuration')
+            openInfoDialog('Configuration failed', 'Failed to apply detected configuration')
         } finally {
             setApplyingDetectedConfig(false)
         }
@@ -402,12 +487,66 @@ function ProjectDetailsPage({ projectId }) {
                     </div>
                 </div>
 
+                {actionError && (
+                    <div className="project-action-error">{actionError}</div>
+                )}
+
                 {/* Deployment URL Card */}
                 <div className="deployment-url-card">
                     <div className="card-header">
                         <h3>Live Deployment</h3>
-                        <div className={`status-badge ${project.Deployement?.[0]?.status?.toLowerCase().replace(/[^a-z]/g, '-') || 'not-started'}`}>
-                            {project.Deployement?.[0]?.status || 'NOT_STARTED'}
+                        <div className="card-header-actions">
+                            <div className={`status-badge ${project.Deployement?.[0]?.status?.toLowerCase().replace(/[^a-z]/g, '-') || 'not-started'}`}>
+                                {project.Deployement?.[0]?.status || 'NOT_STARTED'}
+                            </div>
+                            <div className="actions-menu-wrap">
+                                <button
+                                    className="actions-menu-btn"
+                                    onClick={() => setShowActionsMenu(prev => !prev)}
+                                    title="Project actions"
+                                >
+                                    ⋮
+                                </button>
+                                {showActionsMenu && (
+                                    <div className="actions-menu-dropdown">
+                                        <button
+                                            className="actions-menu-item"
+                                            onClick={() => handleStartDeployment('latest')}
+                                            disabled={deployActionLoading}
+                                        >
+                                            {deployActionLoading ? 'Starting...' : 'Deploy Latest Commit'}
+                                        </button>
+                                        <button
+                                            className="actions-menu-item"
+                                            onClick={() => handleStartDeployment('redeploy')}
+                                            disabled={deployActionLoading || deployments.length === 0}
+                                        >
+                                            Redeploy
+                                        </button>
+                                        <button
+                                            className="actions-menu-item danger"
+                                            onClick={() => {
+                                                setShowActionsMenu(false)
+                                                setShowDeleteLatestDialog(true)
+                                            }}
+                                            disabled={deleteLatestLoading || deployments.length === 0}
+                                        >
+                                            {deleteLatestLoading ? 'Deleting...' : 'Delete Latest Deployment'}
+                                        </button>
+                                        <button
+                                            className="actions-menu-item danger"
+                                            onClick={() => {
+                                                setShowActionsMenu(false)
+                                                setDeleteProjectConfirmText('')
+                                                setShowDeleteProjectModal(true)
+                                                setActionError('')
+                                            }}
+                                        >
+                                            Delete Project
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className="url-container">
@@ -512,7 +651,7 @@ function ProjectDetailsPage({ projectId }) {
                             <h3>Deployment History</h3>
                             <div className="deployments-list">
                                 {deployments.length > 0 ? (
-                                    deployments.map((deployment) => (
+                                    deployments.map((deployment, index) => (
                                         <div
                                             key={deployment.id}
                                             className={`deployment-item ${selectedDeployment?.id === deployment.id ? 'selected' : ''}`}
@@ -522,12 +661,14 @@ function ProjectDetailsPage({ projectId }) {
                                                 <div className="deployment-id">#{deployment.id.slice(-8)}</div>
                                                 <div className="deployment-time">{getTimeAgo(deployment.createdAt)}</div>
                                             </div>
-                                            <div
-                                                className="deployment-status"
-                                                style={{ '--status-color': getStatusColor(deployment.status) }}
-                                            >
-                                                {deployment.status}
-                                            </div>
+                                            {index === 0 && (
+                                                <div
+                                                    className="deployment-status"
+                                                    style={{ '--status-color': getStatusColor(deployment.status) }}
+                                                >
+                                                    {deployment.status}
+                                                </div>
+                                            )}
                                         </div>
                                     ))
                                 ) : (
@@ -557,28 +698,23 @@ function ProjectDetailsPage({ projectId }) {
                                     <span className="deployment-id">
                                         Deployment #{selectedDeployment.id.slice(-8)}
                                     </span>
-                                    <span
-                                        className="deployment-status-badge"
-                                        style={{
-                                            backgroundColor: getStatusColor(selectedDeployment.status),
-                                            color: 'white',
-                                            padding: '4px 8px',
-                                            borderRadius: '12px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '500'
-                                        }}
-                                    >
-                                        {selectedDeployment.status === 'IN_PROGRESS' && '⟳ '}
-                                        {selectedDeployment.status}
-                                    </span>
-                                    {selectedDeployment.status === 'FAIL' && (
-                                        <button
-                                            className="retry-deployment-btn"
-                                            onClick={handleRetryDeployment}
-                                            title="Start a new deployment"
+                                    {selectedDeployment?.id === deployments?.[0]?.id ? (
+                                        <span
+                                            className="deployment-status-badge"
+                                            style={{
+                                                backgroundColor: getStatusColor(selectedDeployment.status),
+                                                color: 'white',
+                                                padding: '4px 8px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '500'
+                                            }}
                                         >
-                                            Retry Deploy
-                                        </button>
+                                            {selectedDeployment.status === 'IN_PROGRESS' && '⟳ '}
+                                            {selectedDeployment.status}
+                                        </span>
+                                    ) : (
+                                        <span className="historic-deployment-badge">Historic deployment</span>
                                     )}
                                 </div>
                                 {selectedDeployment.status === 'FAIL' && (
@@ -663,6 +799,109 @@ function ProjectDetailsPage({ projectId }) {
                         fetchProjectDetails() // Refresh to get latest data
                     }}
                 />
+            )}
+
+            {showDeleteProjectModal && (
+                <div className="modal-overlay" onClick={() => setShowDeleteProjectModal(false)}>
+                    <div className="modal-content delete-project-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Delete Project</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowDeleteProjectModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p>
+                            This will permanently delete project <strong>{project.name}</strong>, all deployments, and hosted website files from S3.
+                        </p>
+                        <p>Type <strong>{project.name}</strong> to confirm:</p>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={deleteProjectConfirmText}
+                            onChange={(e) => setDeleteProjectConfirmText(e.target.value)}
+                            placeholder="Type project name exactly"
+                        />
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-outline"
+                                onClick={() => setShowDeleteProjectModal(false)}
+                                disabled={deleteProjectLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDeleteProject}
+                                disabled={deleteProjectLoading || deleteProjectConfirmText !== project.name}
+                            >
+                                {deleteProjectLoading ? 'Deleting...' : 'Delete Project'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showDeleteLatestDialog && (
+                <div className="modal-overlay" onClick={() => setShowDeleteLatestDialog(false)}>
+                    <div className="modal-content delete-project-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Delete Latest Deployment</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowDeleteLatestDialog(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p>
+                            Delete latest deployment <strong>#{deployments?.[0]?.id?.slice(-8)}</strong>? This will remove the hosted website files from S3 and make this project inactive.
+                        </p>
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-outline"
+                                onClick={() => setShowDeleteLatestDialog(false)}
+                                disabled={deleteLatestLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDeleteLatestDeployment}
+                                disabled={deleteLatestLoading}
+                            >
+                                {deleteLatestLoading ? 'Deleting...' : 'Delete Deployment'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showInfoDialog && (
+                <div className="modal-overlay" onClick={() => setShowInfoDialog(false)}>
+                    <div className="modal-content delete-project-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>{infoDialogTitle}</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowInfoDialog(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p>{infoDialogMessage}</p>
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowInfoDialog(false)}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

@@ -160,8 +160,8 @@ function UserProfilePage() {
         memberSince: profileData?.createdAt ? getMemberSince(profileData.createdAt) : 'Unknown'
     }
 
-    // Transform projects data
-    const userProjects = profileData?.projects?.map(project => {
+    // Transform projects data and sort by most recent deployment timestamp (newest first)
+    const userProjects = (profileData?.projects || []).map(project => {
         const latestDeployment = project.Deployement?.[0]
         const getProjectStatus = (deploymentStatus) => {
             switch (deploymentStatus) {
@@ -179,11 +179,31 @@ function UserProfilePage() {
             name: project.name,
             status: getProjectStatus(latestDeployment?.status),
             rawStatus: latestDeployment?.status || 'NOT_STARTED',
-            deployments: project.Deployement?.length || 0,
+            deployments: project._count?.Deployement ?? project.Deployement?.length ?? 0,
             lastDeployed: latestDeployment ? getTimeAgo(latestDeployment.createdAt) : 'Never',
+            lastDeployedAt: latestDeployment?.createdAt || null,
             url: getProjectUrl(project.subDomain)
         }
-    }) || []
+    }).sort((a, b) => {
+        const aTime = a.lastDeployedAt ? new Date(a.lastDeployedAt).getTime() : 0
+        const bTime = b.lastDeployedAt ? new Date(b.lastDeployedAt).getTime() : 0
+        return bTime - aTime
+    })
+
+    // Build recent activities from deployments and keep newest at the top.
+    const recentActivities = (profileData?.projects || [])
+        .filter(project => project.Deployement?.length > 0)
+        .map(project => {
+            const latestDeployment = project.Deployement[0]
+            return {
+                projectId: project.id,
+                projectName: project.name,
+                status: latestDeployment.status,
+                createdAt: latestDeployment.createdAt
+            }
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
 
     return (
         <div className="user-profile-page">
@@ -323,42 +343,38 @@ function UserProfilePage() {
                 <div className="profile-activity">
                     <h2>Recent Activity</h2>
                     <div className="activity-list">
-                        {profileData?.projects?.length > 0 ? (
-                            profileData.projects
-                                .filter(project => project.Deployement?.length > 0)
-                                .slice(0, 5)
-                                .map((project, index) => {
-                                    const latestDeployment = project.Deployement[0]
-                                    const getActivityIcon = (status) => {
-                                        switch (status) {
-                                            case 'READY': return '🚀'
-                                            case 'IN_PROGRESS': return '⏳'
-                                            case 'QUEUED': return '🔄'
-                                            case 'FAIL': return '❌'
-                                            default: return '🔧'
-                                        }
+                        {recentActivities.length > 0 ? (
+                            recentActivities.map((activity) => {
+                                const getActivityIcon = (status) => {
+                                    switch (status) {
+                                        case 'READY': return '🚀'
+                                        case 'IN_PROGRESS': return '⏳'
+                                        case 'QUEUED': return '🔄'
+                                        case 'FAIL': return '❌'
+                                        default: return '🔧'
                                     }
+                                }
 
-                                    const getActivityText = (status) => {
-                                        switch (status) {
-                                            case 'READY': return 'deployed successfully'
-                                            case 'IN_PROGRESS': return 'deployment in progress'
-                                            case 'QUEUED': return 'deployment queued'
-                                            case 'FAIL': return 'deployment failed'
-                                            default: return 'status updated'
-                                        }
+                                const getActivityText = (status) => {
+                                    switch (status) {
+                                        case 'READY': return 'deployed successfully'
+                                        case 'IN_PROGRESS': return 'deployment in progress'
+                                        case 'QUEUED': return 'deployment queued'
+                                        case 'FAIL': return 'deployment failed'
+                                        default: return 'status updated'
                                     }
+                                }
 
-                                    return (
-                                        <div key={project.id} className="activity-item">
-                                            <div className="activity-icon">{getActivityIcon(latestDeployment.status)}</div>
-                                            <div className="activity-content">
-                                                <p><strong>{project.name}</strong> {getActivityText(latestDeployment.status)}</p>
-                                                <span className="activity-time">{getTimeAgo(latestDeployment.createdAt)}</span>
-                                            </div>
+                                return (
+                                    <div key={activity.projectId} className="activity-item">
+                                        <div className="activity-icon">{getActivityIcon(activity.status)}</div>
+                                        <div className="activity-content">
+                                            <p><strong>{activity.projectName}</strong> {getActivityText(activity.status)}</p>
+                                            <span className="activity-time">{getTimeAgo(activity.createdAt)}</span>
                                         </div>
-                                    )
-                                })
+                                    </div>
+                                )
+                            })
                         ) : (
                             <div className="no-activity">
                                 <p>No recent activity. Create your first project to get started!</p>

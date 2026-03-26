@@ -126,11 +126,11 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                 </div>
             )}
 
-            {isFailed && (
+            {/* {isFailed && (
                 <div className="failure-notice">
                     Deployment failed. Check logs for details.
                 </div>
-            )}
+            )} */}
 
             <div className="project-actions">
                 <button
@@ -141,7 +141,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                     View Logs
                 </button>
 
-                {isFailed && (
+                {/* {isFailed && (
                     <button
                         className="retry-btn"
                         onClick={handleRetryDeployment}
@@ -149,7 +149,7 @@ function ProjectCard({ id, title, environment, lastDeployed, subDomain, deployme
                     >
                         Retry Deploy
                     </button>
-                )}
+                )} */}
             </div>
 
             <style jsx>{`
