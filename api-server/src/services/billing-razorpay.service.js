@@ -21,6 +21,17 @@ function toPaise(amount, currency) {
     return Math.round(Number(amount) * 100)
 }
 
+function minimumOrderSubunits(currency) {
+    const normalizedCurrency = String(currency || 'INR').toUpperCase()
+
+    // Razorpay requires at least Rs. 1.00 for INR orders.
+    if (normalizedCurrency === 'INR') {
+        return 100
+    }
+
+    return 1
+}
+
 async function resolvePayableAmount(user) {
     const invoices = await getInvoicesForUser(user.id)
     const openInvoice = invoices.find((inv) => inv.status === 'OPEN' || inv.status === 'FAILED')
@@ -120,10 +131,12 @@ async function createOrderForUser(user, payload = {}) {
 
     const resolved = await resolvePayableAmount(user)
     const requestedAmount = payload.amountInr !== undefined ? Number(payload.amountInr) : resolved.amountInr
-    const amountInr = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : 1
+    const normalizedAmountInr = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : 1
 
     const currency = process.env.RAZORPAY_CURRENCY || 'INR'
-    const amountInSubunits = toPaise(amountInr, currency)
+    const minSubunits = minimumOrderSubunits(currency)
+    const amountInSubunits = Math.max(toPaise(normalizedAmountInr, currency), minSubunits)
+    const amountInr = amountInSubunits / 100
 
     const order = await razorpay.orders.create({
         amount: amountInSubunits,
