@@ -16,7 +16,7 @@ require('dotenv').config()
 const PORT = process.env.PORT || 9000
 const ENABLE_BILLING_WORKER = process.env.ENABLE_BILLING_WORKER !== 'false'
 const ENABLE_BILLING_MONTH_END_CRON = process.env.ENABLE_BILLING_MONTH_END_CRON === 'true'
-const BILLING_MONTH_END_CRON = process.env.BILLING_MONTH_END_CRON || '30 11 28 * *'
+const BILLING_MONTH_END_CRON = process.env.BILLING_MONTH_END_CRON || '0 0 1 * *'
 let billingCronTask = null
 
 // Create Express app
