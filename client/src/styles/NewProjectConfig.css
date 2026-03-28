@@ -6,6 +6,17 @@
     border-top: 1px solid #E5E7EB;
 }
 
+.billing-limit-banner {
+    background: #fff7e3;
+    border: 1px solid #f1d49b;
+    border-left: 4px solid #ee7c0b;
+    color: #7c2d12;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
 .btn-toggle {
     width: 100%;
     text-align: left;

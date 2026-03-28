@@ -1,6 +1,7 @@
 const prisma = require('../config/database')
 const { ECSClient, RunTaskCommand } = require('@aws-sdk/client-ecs')
 const { deleteDeploymentFromS3 } = require('../utils/s3')
+const { ensureBillingAccountForUser } = require('./billing-account.service')
 
 const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
 const DEPLOYMENT_URL_PROTOCOL = (process.env.DEPLOYMENT_URL_PROTOCOL || 'https').trim()
@@ -91,6 +92,26 @@ async function createDeployment(projectId, userId, options = {}) {
         const error = new Error('Access denied')
         error.statusCode = 403
         throw error
+    }
+
+    if (!project.billingAccountId) {
+        const owner = await prisma.user.findUnique({
+            where: { id: project.userId },
+            select: {
+                id: true,
+                email: true,
+                displayName: true
+            }
+        })
+
+        if (owner) {
+            const billingAccount = await ensureBillingAccountForUser(owner)
+            await prisma.project.update({
+                where: { id: project.id },
+                data: { billingAccountId: billingAccount.id }
+            })
+            project.billingAccountId = billingAccount.id
+        }
     }
 
     // Validate GitHub repository

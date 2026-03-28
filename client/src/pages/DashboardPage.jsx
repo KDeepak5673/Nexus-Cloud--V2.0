@@ -7,8 +7,10 @@ import {
   getDashboardStats,
   getDeploymentActivity,
   getSuccessFailureTrend,
-  getRecentDeployments
+  getRecentDeployments,
+  getBillingSummary
 } from '../lib/api.js'
+import PaymentBlockDialog from '../components/PaymentBlockDialog.jsx'
 import '../styles/DashboardPage.css';
 import {
   LineChart,
@@ -147,6 +149,8 @@ function DashboardPage() {
   const [trendData, setTrendData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [billingBlocked, setBillingBlocked] = useState(false)
+  const [billingBlockMessage, setBillingBlockMessage] = useState('')
 
   useEffect(() => {
     fetchDashboardData()
@@ -159,18 +163,34 @@ function DashboardPage() {
 
       // Fetch all dashboard data in parallel
       const [
+        billingSummaryResponse,
         projectsResponse,
         recentDeploymentsResponse,
         statsResponse,
         activityResponse,
         trendResponse
       ] = await Promise.all([
+        getBillingSummary(),
         getProjects(),
         getRecentDeployments(50),
         getDashboardStats(),
         getDeploymentActivity(),
         getSuccessFailureTrend()
       ])
+
+      if (billingSummaryResponse?.status === 'success') {
+        const hardLimitExceeded = (billingSummaryResponse.data.alerts || []).some((alert) =>
+          (alert.metricType === 'BUILD_MINUTES' || alert.metricType === 'EGRESS_MB')
+          && alert.level === 'hard'
+        )
+
+        if (hardLimitExceeded) {
+          setBillingBlocked(true)
+          setBillingBlockMessage('You have exceeded the build minutes or egress limit. Clear payment to access the dashboard.')
+          setLoading(false)
+          return
+        }
+      }
 
       // Transform and set projects
       if (projectsResponse?.status === 'success') {
@@ -444,6 +464,20 @@ function DashboardPage() {
     )
   }
 
+  if (billingBlocked) {
+    return (
+      <div className="dashboard-container">
+        <PaymentBlockDialog
+          open={billingBlocked}
+          title="Payment required"
+          message={billingBlockMessage}
+          onClose={() => window.appState.setPage('billing')}
+          onPay={() => window.appState.setPage('billing')}
+        />
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="dashboard-modern-container">
@@ -492,7 +526,7 @@ function DashboardPage() {
               key={index}
               label={stat.title}
               value={stat.value}
-              change={stat.change}
+              // change={stat.change}
               trend={stat.trend}
               iconType={stat.iconType}
             />
@@ -735,7 +769,7 @@ function DashboardPage() {
               <div className="action-label">Create Project</div>
             </button>
 
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" onClick={() => window.appState.setPage('billing')}>
               <div className="action-icon-svg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -745,17 +779,17 @@ function DashboardPage() {
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
               </div>
-              <div className="action-label">View Logs</div>
+              <div className="action-label">Billing Overview</div>
             </button>
 
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" onClick={() => window.appState.setPage('profile')}>
               <div className="action-icon-svg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="3" />
                   <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.66 5.66 4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.66-5.66 4.24-4.24" />
                 </svg>
               </div>
-              <div className="action-label">Manage Environments</div>
+              <div className="action-label">Profile Settings</div>
             </button>
           </div>
         </div>

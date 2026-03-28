@@ -18,12 +18,7 @@ function getRazorpayClient() {
 }
 
 function toPaise(amount, currency) {
-    if ((currency || '').toUpperCase() === 'INR') {
-        return Math.round(Number(amount) * 100)
-    }
-
-    const usdToInr = Number(process.env.USD_TO_INR || 83)
-    return Math.round(Number(amount) * usdToInr * 100)
+    return Math.round(Number(amount) * 100)
 }
 
 async function resolvePayableAmount(user) {
@@ -32,7 +27,7 @@ async function resolvePayableAmount(user) {
 
     if (openInvoice) {
         return {
-            amountUsd: Number(openInvoice.totalUsd),
+            amountInr: Number(openInvoice.totalInr),
             invoiceId: openInvoice.id,
             reason: 'open_invoice'
         }
@@ -40,10 +35,83 @@ async function resolvePayableAmount(user) {
 
     const summary = await getBillingSummaryForUser(user.id)
     return {
-        amountUsd: Number(summary?.costs?.subtotalUsd || 0),
+        amountInr: Number(summary?.costs?.netSubtotalInr || summary?.costs?.subtotalInr || 0),
         invoiceId: null,
         reason: 'mtd_usage'
     }
+}
+
+async function applyPaymentToAccount({
+    accountId,
+    invoiceId,
+    paymentId,
+    amountInr,
+    status,
+    eventType,
+    payload
+}) {
+    const normalizedAmount = Number.isFinite(Number(amountInr)) ? Number(amountInr) : null
+
+    const roundInr = (value) => Math.round(Number(value || 0) * 100) / 100
+
+    if (paymentId) {
+        const existing = await prisma.paymentEvent.findFirst({
+            where: { stripeObjectId: paymentId }
+        })
+
+        if (existing) {
+            return existing
+        }
+    }
+
+    const paymentEvent = await prisma.paymentEvent.create({
+        data: {
+            accountId,
+            invoiceId: invoiceId || null,
+            stripeObjectId: paymentId || null,
+            status,
+            amountInr: normalizedAmount,
+            eventType,
+            payload
+        }
+    })
+
+    if (status === 'SUCCESS' && normalizedAmount && normalizedAmount > 0) {
+        const account = await prisma.billingAccount.findUnique({
+            where: { id: accountId },
+            select: { balanceInr: true }
+        })
+        let newBalance = roundInr(Number(account?.balanceInr || 0) + normalizedAmount)
+
+        if (invoiceId) {
+            const invoice = await prisma.invoice.findFirst({
+                where: {
+                    id: invoiceId,
+                    accountId
+                }
+            })
+
+            if (invoice && (invoice.status === 'OPEN' || invoice.status === 'FAILED')) {
+                const invoiceTotal = Number(invoice.totalInr)
+                const applied = Math.min(newBalance, invoiceTotal)
+                newBalance = roundInr(newBalance - applied)
+
+                if (applied >= invoiceTotal) {
+                    await prisma.invoice.update({
+                        where: { id: invoice.id },
+                        data: { status: 'PAID' }
+                    })
+                }
+            }
+        }
+
+        await prisma.billingAccount.update({
+            where: { id: accountId },
+            data: { balanceInr: newBalance }
+        })
+    }
+
+    return paymentEvent
 }
 
 async function createOrderForUser(user, payload = {}) {
@@ -51,11 +119,11 @@ async function createOrderForUser(user, payload = {}) {
     const razorpay = getRazorpayClient()
 
     const resolved = await resolvePayableAmount(user)
-    const requestedAmount = payload.amountUsd !== undefined ? Number(payload.amountUsd) : resolved.amountUsd
-    const amountUsd = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : 1
+    const requestedAmount = payload.amountInr !== undefined ? Number(payload.amountInr) : resolved.amountInr
+    const amountInr = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : 1
 
     const currency = process.env.RAZORPAY_CURRENCY || 'INR'
-    const amountInSubunits = toPaise(amountUsd, currency)
+    const amountInSubunits = toPaise(amountInr, currency)
 
     const order = await razorpay.orders.create({
         amount: amountInSubunits,
@@ -72,7 +140,7 @@ async function createOrderForUser(user, payload = {}) {
     return {
         order,
         keyId: process.env.RAZORPAY_KEY_ID,
-        amountUsd,
+        amountInr,
         accountId: account.id,
         invoiceId: resolved.invoiceId
     }
@@ -102,18 +170,26 @@ async function verifyPaymentForUser(user, payload) {
     }
 
     const account = await getPrimaryBillingAccountForUser(user.id)
+    const razorpay = getRazorpayClient()
+    const order = await razorpay.orders.fetch(orderId)
 
-    await prisma.paymentEvent.create({
-        data: {
-            accountId: account.id,
-            stripeObjectId: paymentId,
-            status: 'SUCCESS',
-            eventType: 'razorpay.payment.verified',
-            payload: {
-                orderId,
-                paymentId,
-                verifiedAt: new Date().toISOString()
-            }
+    const notes = order?.notes || {}
+    const accountId = notes.accountId || account.id
+    const invoiceId = notes.invoiceId || null
+    const amountInr = order?.amount ? Number(order.amount) / 100 : null
+
+    await applyPaymentToAccount({
+        accountId,
+        invoiceId,
+        paymentId,
+        amountInr,
+        status: 'SUCCESS',
+        eventType: 'razorpay.payment.verified',
+        payload: {
+            orderId,
+            paymentId,
+            verifiedAt: new Date().toISOString(),
+            order
         }
     })
 
@@ -147,17 +223,17 @@ async function handleRazorpayWebhook(rawBody, signature) {
     const event = JSON.parse(rawBody.toString())
     const paymentEntity = event?.payload?.payment?.entity
     const accountId = paymentEntity?.notes?.accountId
+    const invoiceId = paymentEntity?.notes?.invoiceId
 
     if (accountId) {
-        await prisma.paymentEvent.create({
-            data: {
-                accountId,
-                stripeObjectId: paymentEntity.id,
-                status: paymentEntity.status === 'captured' ? 'SUCCESS' : 'PENDING',
-                eventType: `razorpay.${event.event || 'payment_event'}`,
-                amountUsd: paymentEntity.amount ? Number(paymentEntity.amount) / 100 : null,
-                payload: event
-            }
+        await applyPaymentToAccount({
+            accountId,
+            invoiceId,
+            paymentId: paymentEntity.id,
+            amountInr: paymentEntity.amount ? Number(paymentEntity.amount) / 100 : null,
+            status: paymentEntity.status === 'captured' ? 'SUCCESS' : 'PENDING',
+            eventType: `razorpay.${event.event || 'payment_event'}`,
+            payload: event
         })
     }
 

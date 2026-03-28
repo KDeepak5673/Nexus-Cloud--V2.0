@@ -600,6 +600,38 @@
     font-weight: 600;
 }
 
+.docs-pricing-table {
+    margin: 1.5rem 0 2rem;
+    overflow-x: auto;
+}
+
+.docs-pricing-table table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px;
+}
+
+.docs-pricing-table caption {
+    text-align: left;
+    font-weight: 600;
+    color: #122a2c;
+    margin-bottom: 0.75rem;
+}
+
+.docs-pricing-table th,
+.docs-pricing-table td {
+    text-align: left;
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid #E5E7EB;
+    font-size: 0.95rem;
+}
+
+.docs-pricing-table th {
+    background: #F3F4F6;
+    color: #122a2c;
+    font-weight: 600;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-block;

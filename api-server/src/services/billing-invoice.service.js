@@ -2,8 +2,12 @@ const fs = require('fs')
 const path = require('path')
 const PDFDocument = require('pdfkit')
 const prisma = require('../config/database')
-const { startOfMonth, addMonths } = require('./billing.service')
+const { startOfMonth, addMonths, getMonthlyDeploymentAndProjectStats, calculateDeploymentChargeForProjects } = require('./billing.service')
 const { calculateMetricCharge, roundCurrency } = require('./billing-pricing.service')
+
+function formatInr(value) {
+    return `Rs. ${Number(value || 0).toFixed(2)}`
+}
 
 function getInvoiceDir() {
     const dir = path.join(process.cwd(), 'artifacts', 'invoices')
@@ -32,14 +36,14 @@ async function generateInvoicePdf(invoice, lineItems, accountName) {
 
     lineItems.forEach((item) => {
         doc.fontSize(10).text(`${item.description}`)
-        doc.text(`Qty: ${Number(item.quantity).toFixed(4)} | Unit: $${Number(item.unitPriceUsd).toFixed(6)} | Amount: $${Number(item.amountUsd).toFixed(2)}`)
+        doc.text(`Qty: ${Number(item.quantity).toFixed(4)} | Unit: ${formatInr(item.unitPriceInr)} | Amount: ${formatInr(item.amountInr)}`)
         doc.moveDown(0.4)
     })
 
     doc.moveDown(1)
-    doc.fontSize(12).text(`Subtotal: $${Number(invoice.subtotalUsd).toFixed(2)}`)
-    doc.text(`Tax: $${Number(invoice.taxUsd).toFixed(2)}`)
-    doc.text(`Total: $${Number(invoice.totalUsd).toFixed(2)}`)
+    doc.fontSize(12).text(`Subtotal: ${formatInr(invoice.subtotalInr)}`)
+    doc.text(`Tax: ${formatInr(invoice.taxInr)}`)
+    doc.text(`Total: ${formatInr(invoice.totalInr)}`)
 
     doc.end()
 
@@ -80,7 +84,9 @@ async function finalizeMonthlyInvoice(accountId, date = new Date()) {
 
     const metricConsumedMap = {
         BUILD_MINUTES: 0,
-        EGRESS_MB: 0
+        EGRESS_MB: 0,
+        DEPLOYMENT_COUNT: 0,
+        PROJECT_COUNT: 0
     }
 
     const draftItems = []
@@ -100,8 +106,8 @@ async function finalizeMonthlyInvoice(accountId, date = new Date()) {
             projectId: row.projectId,
             description: `${row.metricType} usage for ${row.project?.name || 'Unassigned project'}`,
             quantity: Number(row.quantity),
-            unitPriceUsd: charge.unitPriceUsd,
-            amountUsd: charge.amountUsd,
+            unitPriceInr: charge.unitPriceInr,
+            amountInr: charge.amountInr,
             metadata: {
                 monthStart: periodStart.toISOString(),
                 includedUnits: charge.includedUnits,
@@ -110,10 +116,56 @@ async function finalizeMonthlyInvoice(accountId, date = new Date()) {
         })
     }
 
-    const subtotalUsd = roundCurrency(draftItems.reduce((sum, item) => sum + item.amountUsd, 0))
+    const deploymentAndProjectStats = await getMonthlyDeploymentAndProjectStats(accountId, periodStart, periodEnd)
+
+    const deploymentCharge = await calculateDeploymentChargeForProjects(
+        accountId,
+        deploymentAndProjectStats.deploymentCountsByProject,
+        periodEnd
+    )
+    metricConsumedMap.DEPLOYMENT_COUNT += deploymentAndProjectStats.deploymentCount
+
+    draftItems.push({
+        metricType: 'DEPLOYMENT_COUNT',
+        projectId: null,
+        description: 'Monthly deployment count charge',
+        quantity: deploymentAndProjectStats.deploymentCount,
+        unitPriceInr: deploymentCharge.unitPriceInr,
+        amountInr: deploymentCharge.amountInr,
+        metadata: {
+            monthStart: periodStart.toISOString(),
+            includedUnitsPerProject: deploymentCharge.includedUnits,
+            billableUnits: deploymentCharge.billableUnits
+        }
+    })
+
+    const projectCharge = await calculateMetricCharge({
+        accountId,
+        metricType: 'PROJECT_COUNT',
+        quantity: deploymentAndProjectStats.projectCount,
+        alreadyConsumed: metricConsumedMap.PROJECT_COUNT,
+        at: periodEnd
+    })
+    metricConsumedMap.PROJECT_COUNT += deploymentAndProjectStats.projectCount
+
+    draftItems.push({
+        metricType: 'PROJECT_COUNT',
+        projectId: null,
+        description: 'Monthly project count charge',
+        quantity: deploymentAndProjectStats.projectCount,
+        unitPriceInr: projectCharge.unitPriceInr,
+        amountInr: projectCharge.amountInr,
+        metadata: {
+            monthStart: periodStart.toISOString(),
+            includedUnits: projectCharge.includedUnits,
+            billableUnits: projectCharge.billableUnits
+        }
+    })
+
+    const subtotalInr = roundCurrency(draftItems.reduce((sum, item) => sum + item.amountInr, 0))
     const taxRate = Number(process.env.BILLING_TAX_RATE || 0)
-    const taxUsd = roundCurrency(subtotalUsd * taxRate)
-    const totalUsd = roundCurrency(subtotalUsd + taxUsd)
+    const taxInr = roundCurrency(subtotalInr * taxRate)
+    const totalInr = roundCurrency(subtotalInr + taxInr)
 
     const invoice = await prisma.invoice.create({
         data: {
@@ -121,9 +173,9 @@ async function finalizeMonthlyInvoice(accountId, date = new Date()) {
             periodStart,
             periodEnd,
             status: 'OPEN',
-            subtotalUsd,
-            taxUsd,
-            totalUsd,
+            subtotalInr,
+            taxInr,
+            totalInr,
             snapshotJson: {
                 periodStart,
                 periodEnd,

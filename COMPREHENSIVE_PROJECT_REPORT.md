@@ -559,7 +559,7 @@ GET    /api/billing/summary
        Get billing summary for current month
        Returns: {
          currentMonthUsage: { BUILD_MINUTES, EGRESS_MB },
-         estimatedCostUsd: number,
+         estimatedCostInr: number,
          billingAlerts: [{ type, level, message }],
          sevenDayTrend: [{ date, cost }]
        }
@@ -601,9 +601,9 @@ GET    /api/billing/pricing
 POST   /api/billing/razorpay/order
        Create Razorpay payment order
        Auth: requireAuth + OWNER/ADMIN role
-       Input: { amountUsd } (optional, resolves to open invoice or MTD if not provided)
+      Input: { amountInr } (optional, resolves to open invoice or MTD if not provided)
        Returns: { orderId, keyId, amount, currency }
-       Action: Converts USD to INR, creates Razorpay order
+      Action: Creates Razorpay order in INR
 
 POST   /api/billing/razorpay/verify
        Verify Razorpay payment
@@ -628,7 +628,7 @@ GET    /api/billing/adjustments
 POST   /api/billing/adjustments
        Create manual billing adjustment
        Auth: requireAuth + OWNER/ADMIN role
-       Input: { projectId, metricType, amountUsd, reason, notes }
+      Input: { projectId, metricType, amountInr, reason, notes }
        Returns: Created adjustment record
 ```
 
@@ -719,7 +719,7 @@ GET    /logs/:id
 #### **Billing Razorpay Service**
 - `createOrderForUser(user, payload)` - Create Razorpay order
   - Resolves payable amount (open invoice or MTD usage)
-  - Converts USD → INR
+  - Uses INR pricing
 - `verifyPaymentForUser(user, payload)` - Verify payment signature
 - `handleRazorpayWebhook(rawBody, signature)` - Process webhook
 - `validatePaymentSignature(orderId, paymentId, signature)` - HMAC-SHA256 verification
@@ -1408,11 +1408,11 @@ Relationships:
 ```
 id (UUID) - Primary key
 name (String) - Account name
-currency (String, default: "USD") - Currency for billing
+currency (String, default: "INR") - Currency for billing
 stripeCustomerId (String, nullable) - Stripe integration
 stripeSubscriptionId (String, nullable) - Stripe subscription
-budgetSoftLimitUsd (Decimal, default: 100) - Soft quota limit
-budgetHardLimitUsd (Decimal, default: 500) - Hard quota limit
+budgetSoftLimitInr (Decimal, default: 100) - Soft quota limit
+budgetHardLimitInr (Decimal, default: 500) - Hard quota limit
 isDunningActive (Boolean) - Payment collection status
 createdByUserId (UUID, FK) - Account creator
 createdAt (DateTime)
@@ -1453,7 +1453,7 @@ accountId (UUID, FK, nullable) - Account-specific pricing (null = default)
 metricType (Enum: BUILD_MINUTES, EGRESS_MB)
 - BUILD_MINUTES: Build time in minutes
 - EGRESS_MB: Data egress in megabytes
-unitPriceUsd (Decimal 18,6) - Cost per unit (e.g., $0.0025/min)
+unitPriceInr (Decimal 18,6) - Cost per unit (e.g., Rs. 0.2075/min)
 includedUnits (Decimal 18,6) - Monthly included units (e.g., 100 free minutes)
 activeFrom (DateTime) - Pricing start date
 activeTo (DateTime, nullable) - Pricing end date
@@ -1463,8 +1463,8 @@ Relationships:
 - account: BillingAccount (nullable)
 
 Default Pricing (if accountId is null):
-- BUILD_MINUTES: $0.0025 with 100 included/month
-- EGRESS_MB: $0.0001 with 1000 included/month
+- BUILD_MINUTES: Rs. 0.2075 with 100 included/month
+- EGRESS_MB: Rs. 0.0083 with 1000 included/month
 ```
 
 ##### **QuotaPolicy Model**
@@ -1516,8 +1516,8 @@ projectId (UUID, FK)
 metricType (Enum: BUILD_MINUTES, EGRESS_MB)
 bucketStart (DateTime) - Hour bucket start
 quantity (Decimal 18,6) - Total consumed in hour
-unitCostUsd (Decimal 18,6) - Unit price in effect
-costUsd (Decimal 18,6) - Total cost for hour
+unitCostInr (Decimal 18,6) - Unit price in effect
+costInr (Decimal 18,6) - Total cost for hour
 createdAt (DateTime)
 
 Unique constraint: (accountId, projectId, metricType, bucketStart)
@@ -1535,8 +1535,8 @@ projectId (UUID, FK)
 metricType (Enum: BUILD_MINUTES, EGRESS_MB)
 bucketDate (Date) - Date bucket
 quantity (Decimal 18,6)
-unitCostUsd (Decimal 18,6)
-costUsd (Decimal 18,6)
+unitCostInr (Decimal 18,6)
+costInr (Decimal 18,6)
 createdAt (DateTime)
 
 Unique constraint: (accountId, projectId, metricType, bucketDate)
@@ -1554,8 +1554,8 @@ projectId (UUID, FK)
 metricType (Enum: BUILD_MINUTES, EGRESS_MB)
 monthStart (Date) - First day of month
 quantity (Decimal 18,6)
-unitCostUsd (Decimal 18,6)
-costUsd (Decimal 18,6)
+unitCostInr (Decimal 18,6)
+costInr (Decimal 18,6)
 createdAt (DateTime)
 
 Unique constraint: (accountId, projectId, metricType, monthStart)
@@ -1580,9 +1580,9 @@ status (Enum: DRAFT, OPEN, PAID, VOID, UNCOLLECTIBLE, FAILED)
 - VOID: Cancelled invoice
 - UNCOLLECTIBLE: Bad debt
 - FAILED: Payment failed
-subtotalUsd (Decimal 18,6) - Sum of line items
-taxUsd (Decimal 18,6) - Tax amount
-totalUsd (Decimal 18,6) - Total due
+subtotalInr (Decimal 18,6) - Sum of line items
+taxInr (Decimal 18,6) - Tax amount
+totalInr (Decimal 18,6) - Total due
 stripeInvoiceId (String, nullable) - Stripe sync
 externalPdfUrl (String, nullable) - PDF storage URL
 snapshotJson (JSON) - Metadata snapshot
@@ -1603,8 +1603,8 @@ metricType (String) - Metric name (BUILD_MINUTES, EGRESS_MB)
 projectId (UUID, FK, nullable) - Optional project
 description (String) - Human-readable description
 quantity (Decimal 18,6) - Units consumed
-unitPriceUsd (Decimal 18,6) - Cost per unit
-amountUsd (Decimal 18,6) - Total cost (quantity × unitPrice)
+unitPriceInr (Decimal 18,6) - Cost per unit
+amountInr (Decimal 18,6) - Total cost (quantity × unitPrice)
 metadata (JSON) - Additional info
 createdAt (DateTime)
 
@@ -1621,7 +1621,7 @@ invoiceId (UUID, FK, nullable) - Associated invoice
 stripeEventId (String, unique, nullable) - Stripe event ID
 stripeObjectId (String, nullable) - Stripe object ID
 status (Enum: SUCCESS, FAILED, PENDING)
-amountUsd (Decimal 18,6) - Payment amount
+amountInr (Decimal 18,6) - Payment amount
 eventType (String) - Payment event type (razorpay.payment, stripe.charge, etc.)
 payload (JSON) - Full event payload
 createdAt (DateTime)
@@ -1641,7 +1641,7 @@ accountId (UUID, FK) - Billing account
 projectId (UUID, FK, nullable) - Project-specific adjustment
 createdByUserId (UUID, FK) - Who created adjustment
 metricType (String) - Metric being adjusted
-amountUsd (Decimal 18,6) - Adjustment amount (positive/negative)
+amountInr (Decimal 18,6) - Adjustment amount (positive/negative)
 reason (String) - Short reason (PROMOTIONAL, ERROR, REFUND, etc.)
 notes (String) - Detailed notes
 createdAt (DateTime)
@@ -1712,7 +1712,7 @@ Relationships: None
 - ✅ Soft/hard quota limits
 - ✅ Usage alerts and warnings
 - ✅ Pricing catalog display
-- ✅ Exchange rate handling (USD/INR)
+- ✅ Exchange rate handling removed (INR-only)
 
 ### 5. **Authentication & Authorization**
 - ✅ Firebase email/password authentication

@@ -7,6 +7,7 @@ function Footer() {
         <div className="footer-links">
           <a href="#" onClick={() => window.appState.setPage('dashboard')}>Dashboard</a>
           <a href="#" onClick={() => window.appState.setPage('new-project')}>Deploy Project</a>
+          <a href="#" onClick={() => window.appState.setPage('billing')}>Billing</a>
           {/* <a href="#" onClick={() => window.appState.setPage('analytics')}>Analytics</a> */}
           <a href="#" onClick={() => window.appState.setPage('docs')}>Documentation</a>
           <span className="footer-separator">|</span>

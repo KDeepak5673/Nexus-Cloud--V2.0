@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import api from '../lib/api'
-import { getProjectUrl, getProjectDisplayUrl } from '../lib/utils.js'
+import React, { useEffect, useState } from 'react'
+import api, { getBillingPricing, getBillingSummary } from '../lib/api'
+import { getProjectUrl } from '../lib/utils.js'
+import PaymentBlockDialog from '../components/PaymentBlockDialog.jsx'
 import '../styles/ProjectConfig.css'
 import '../styles/NewProjectConfig.css'
 
@@ -63,6 +64,11 @@ function NewProjectPage() {
   const [logs, setLogs] = useState([]) // Now stores objects with { message, timestamp }
   const [deploymentUrl, setDeploymentUrl] = useState('')
   const [deploymentStatus, setDeploymentStatus] = useState('')
+  const [billingSummary, setBillingSummary] = useState(null)
+  const [pricing, setPricing] = useState([])
+  const [billingBlocked, setBillingBlocked] = useState(false)
+  const [billingBlockMessage, setBillingBlockMessage] = useState('')
+  const [balanceRemainingInr, setBalanceRemainingInr] = useState(null)
 
   // Helper to add log with timestamp
   const addLog = (message) => {
@@ -77,6 +83,44 @@ function NewProjectPage() {
   const [installCommand, setInstallCommand] = useState('')
   const [framework, setFramework] = useState('auto')
   const [packageManager, setPackageManager] = useState('npm')
+
+  useEffect(() => {
+    const loadBillingStatus = async () => {
+      try {
+        const [summaryRes, pricingRes] = await Promise.all([
+          getBillingSummary(),
+          getBillingPricing()
+        ])
+
+        if (summaryRes?.status === 'success') {
+          const summaryData = summaryRes.data
+          setBillingSummary(summaryData)
+
+          const hardLimitExceeded = (summaryData.alerts || []).some((alert) =>
+            (alert.metricType === 'BUILD_MINUTES' || alert.metricType === 'EGRESS_MB')
+            && alert.level === 'hard'
+          )
+
+          if (hardLimitExceeded) {
+            setBillingBlocked(true)
+            setBillingBlockMessage('You have exceeded the build minutes or egress limit. Clear payment to create new projects.')
+          }
+
+          const budgetLimit = Number(summaryData?.account?.budgetHardLimitInr || 0)
+          const usedAmount = Number(summaryData?.costs?.subtotalInr || 0)
+          setBalanceRemainingInr(budgetLimit > 0 ? Math.max(0, budgetLimit - usedAmount) : null)
+        }
+
+        if (pricingRes?.status === 'success') {
+          setPricing(pricingRes.data.pricing || [])
+        }
+      } catch (err) {
+        console.error('Failed to load billing status', err)
+      }
+    }
+
+    loadBillingStatus()
+  }, [])
 
   // Helper function to sanitize project name for subdomain
   const sanitizeSubdomain = (name) => {
@@ -131,6 +175,16 @@ function NewProjectPage() {
     setError('')
     setDeploymentUrl('')
     setDeploymentStatus('')
+
+    if (billingBlocked) {
+      setError('Usage limits exceeded. Clear payment to create new projects.')
+      return
+    }
+
+    if (isProjectLimitReached) {
+      setError('Project limit reached. Add balance to create more projects.')
+      return
+    }
 
     if (!repoUrl || !/^https?:\/\/github\.com\//i.test(repoUrl)) {
       setError('Please enter a valid GitHub repository URL (e.g., https://github.com/user/repo).')
@@ -228,8 +282,9 @@ function NewProjectPage() {
           addLog(`❌ Failed to queue deployment`)
         }
       } else {
-        setError((res && res.error) || 'Failed to create project')
-        addLog(`❌ Failed to create project: ${(res && res.error) || 'Unknown error'}`)
+        const message = (res && (res.error || res.message)) || 'Failed to create project'
+        setError(message)
+        addLog(`❌ Failed to create project: ${message || 'Unknown error'}`)
       }
     } catch (err) {
       setError(err.message || 'Network error')
@@ -247,9 +302,24 @@ function NewProjectPage() {
     })
   }
 
+  const projectPricing = pricing.find((item) => item.metricType === 'PROJECT_COUNT')
+  const includedProjects = Number(projectPricing?.includedUnits || 0)
+  const currentProjects = Number(billingSummary?.usage?.projects || 0)
+  const remainingBalance = Number(balanceRemainingInr || 0)
+  const isProjectLimitReached = includedProjects > 0
+    && currentProjects >= includedProjects
+    && remainingBalance <= 0
+
   return (
     <div className="new-project-container">
       <div className="container" style={{ padding: '40px 20px', maxWidth: '900px' }}>
+        <PaymentBlockDialog
+          open={billingBlocked}
+          title="Payment required"
+          message={billingBlockMessage}
+          onClose={() => window.appState.setPage('billing')}
+          onPay={() => window.appState.setPage('billing')}
+        />
         <button
           className="btn btn-outline back-button"
           onClick={() => window.appState.setPage('dashboard')}
@@ -262,6 +332,12 @@ function NewProjectPage() {
           <h1>Create New Project</h1>
           <p>Deploy your GitHub repository with a custom domain name</p>
         </div>
+
+        {(isProjectLimitReached || balanceRemainingInr === 0) && (
+          <div className="billing-limit-banner">
+            <strong>Project limit reached.</strong> Add balance in Billing to create more projects beyond the free allowance.
+          </div>
+        )}
 
         <div className="deployment-form-card">
           <form onSubmit={handleDeploy} className="deployment-form">
@@ -279,6 +355,7 @@ function NewProjectPage() {
                   onChange={(e) => setProjectName(e.target.value)}
                   required
                   className="form-input"
+                  disabled={billingBlocked || isProjectLimitReached}
                 />
                 <div className="input-hint">
                   This will be used as your project name.
@@ -300,6 +377,7 @@ function NewProjectPage() {
                   onChange={(e) => setRepoUrl(e.target.value)}
                   required
                   className="form-input"
+                  disabled={billingBlocked || isProjectLimitReached}
                 />
                 <div className="input-hint">
                   Make sure your repository is public or you have access permissions
@@ -313,6 +391,7 @@ function NewProjectPage() {
                 type="button"
                 className="btn btn-outline btn-toggle"
                 onClick={() => setShowAdvanced(!showAdvanced)}
+                disabled={billingBlocked || isProjectLimitReached}
               >
                 <span>{showAdvanced ? '▼' : '▶'}</span>
                 Advanced Configuration (Optional)
@@ -341,6 +420,7 @@ function NewProjectPage() {
                           value={env.key}
                           onChange={(e) => updateEnvVar(env.id, 'key', e.target.value)}
                           className="env-key-input"
+                          disabled={billingBlocked || isProjectLimitReached}
                         />
                         <input
                           type="text"
@@ -348,6 +428,7 @@ function NewProjectPage() {
                           value={env.value}
                           onChange={(e) => updateEnvVar(env.id, 'value', e.target.value)}
                           className="env-value-input"
+                          disabled={billingBlocked || isProjectLimitReached}
                         />
                         {envVars.length > 1 && (
                           <button
@@ -355,6 +436,7 @@ function NewProjectPage() {
                             onClick={() => removeEnvVar(env.id)}
                             className="btn-remove-env"
                             title="Remove variable"
+                            disabled={billingBlocked || isProjectLimitReached}
                           >
                             ×
                           </button>
@@ -368,6 +450,7 @@ function NewProjectPage() {
                     onClick={addEnvVar}
                     className="btn btn-outline btn-add-env"
                     style={{ marginTop: '12px' }}
+                    disabled={billingBlocked || isProjectLimitReached}
                   >
                     + Add Variable
                   </button>
@@ -387,6 +470,7 @@ function NewProjectPage() {
                       value={framework}
                       onChange={(e) => onFrameworkChange(e.target.value)}
                       className="form-input"
+                      disabled={billingBlocked || isProjectLimitReached}
                     >
                       {FRAMEWORK_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
@@ -404,6 +488,7 @@ function NewProjectPage() {
                       value={packageManager}
                       onChange={(e) => onPackageManagerChange(e.target.value)}
                       className="form-input"
+                      disabled={billingBlocked || isProjectLimitReached}
                     >
                       {PACKAGE_MANAGER_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
@@ -423,6 +508,7 @@ function NewProjectPage() {
                       onChange={(e) => setRootDir(e.target.value)}
                       placeholder="."
                       className="form-input"
+                      disabled={billingBlocked || isProjectLimitReached}
                     />
                   </div>
 
@@ -438,6 +524,7 @@ function NewProjectPage() {
                       onChange={(e) => setInstallCommand(e.target.value)}
                       placeholder={framework === 'auto' ? 'Auto-detect (leave empty)' : 'Preset applied - edit if needed'}
                       className="form-input"
+                      disabled={billingBlocked || isProjectLimitReached}
                     />
                   </div>
 
@@ -453,6 +540,7 @@ function NewProjectPage() {
                       onChange={(e) => setBuildCommand(e.target.value)}
                       placeholder={framework === 'auto' ? 'Auto-detect (leave empty)' : 'Preset applied - edit if needed'}
                       className="form-input"
+                      disabled={billingBlocked || isProjectLimitReached}
                     />
                   </div>
                 </div>
@@ -490,7 +578,7 @@ function NewProjectPage() {
             <button
               className="btn btn-primary deploy-btn"
               type="submit"
-              disabled={loading}
+              disabled={loading || billingBlocked || isProjectLimitReached}
             >
               {loading ? (
                 <>

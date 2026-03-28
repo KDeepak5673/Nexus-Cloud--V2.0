@@ -7,7 +7,7 @@ const usageEventSchema = z.object({
     accountId: z.string().uuid(),
     workspaceId: z.string().uuid().optional().nullable(),
     projectId: z.string().uuid().optional().nullable(),
-    metricType: z.enum(['BUILD_MINUTES', 'EGRESS_MB']),
+    metricType: z.enum(['BUILD_MINUTES', 'EGRESS_MB', 'DEPLOYMENT_COUNT', 'PROJECT_COUNT']),
     quantity: z.number().positive(),
     timestamp: z.string().datetime(),
     traceId: z.string().optional().nullable(),

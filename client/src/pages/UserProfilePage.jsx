@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/AuthContext.jsx'
-import { getUserProfile } from '../lib/api.js'
+import { getUserProfile, getBillingSummary } from '../lib/api.js'
 import { getProjectUrl } from '../lib/utils.js'
 import ImageUpload from '../components/ImageUpload.jsx'
 import PricingSection from '../components/PricingSection'
+import PaymentBlockDialog from '../components/PaymentBlockDialog.jsx'
 
 function UserProfilePage() {
     const { user, logout, updateProfile } = useAuth()
@@ -17,10 +18,36 @@ function UserProfilePage() {
     })
     const [updateLoading, setUpdateLoading] = useState(false)
     const [updateError, setUpdateError] = useState('')
+    const [billingBlocked, setBillingBlocked] = useState(false)
+    const [billingBlockMessage, setBillingBlockMessage] = useState('')
+
+    const checkBillingAccess = async () => {
+        try {
+            const summaryRes = await getBillingSummary()
+            if (summaryRes?.status === 'success') {
+                const hardLimitExceeded = (summaryRes.data.alerts || []).some((alert) =>
+                    (alert.metricType === 'BUILD_MINUTES' || alert.metricType === 'EGRESS_MB')
+                    && alert.level === 'hard'
+                )
+
+                if (hardLimitExceeded) {
+                    setBillingBlocked(true)
+                    setBillingBlockMessage('You have exceeded the build minutes or egress limit. Clear payment to access your profile.')
+                    setLoading(false)
+                    return
+                }
+            }
+
+            await fetchUserProfile()
+        } catch (err) {
+            console.error('Billing access check failed:', err)
+            await fetchUserProfile()
+        }
+    }
 
     useEffect(() => {
         if (user?.uid) {
-            fetchUserProfile()
+            checkBillingAccess()
             // Initialize edit form with current user data
             setEditForm({
                 displayName: user.displayName || '',
@@ -148,6 +175,22 @@ function UserProfilePage() {
         )
     }
 
+    if (billingBlocked) {
+        return (
+            <div className="user-profile-page">
+                <div className="container">
+                    <PaymentBlockDialog
+                        open={billingBlocked}
+                        title="Payment required"
+                        message={billingBlockMessage}
+                        onClose={() => window.appState.setPage('billing')}
+                        onPay={() => window.appState.setPage('billing')}
+                    />
+                </div>
+            </div>
+        )
+    }
+
     // Calculate stats from real data
     const userStats = {
         totalProjects: profileData?.projects?.length || 0,
@@ -250,14 +293,7 @@ function UserProfilePage() {
                         </div>
                     </div>
                     <div className="profile-actions">
-                        <button
-                            className="btn btn-primary rounded-lg"
-                            onClick={() => window.appState.setPage('pricing')}
-                            style={{ marginRight: '0.75rem' }}
-                            aria-label="Upgrade Plan"
-                        >
-                            Upgrade Plan
-                        </button>
+                        
                         <button
                             className="btn btn-secondary"
                             onClick={() => setShowEditModal(true)}

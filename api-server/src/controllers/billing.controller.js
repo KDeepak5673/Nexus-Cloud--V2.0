@@ -75,6 +75,15 @@ async function getAdjustments(req, res, next) {
     }
 }
 
+async function getPayments(req, res, next) {
+    try {
+        const payments = await billingService.getPaymentEventsForUser(req.user.id)
+        return successResponse(res, { payments })
+    } catch (error) {
+        next(error)
+    }
+}
+
 async function createRazorpayOrder(req, res, next) {
     try {
         const data = await razorpayService.createOrderForUser(req.user, req.body || {})
@@ -110,6 +119,7 @@ module.exports = {
     getInvoices,
     getInvoiceDetails,
     getPricingCatalog,
+    getPayments,
     createAdjustment,
     getAdjustments,
     createRazorpayOrder,

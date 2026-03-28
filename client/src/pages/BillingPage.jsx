@@ -7,9 +7,8 @@ import {
     getBillingProjectUsage,
     getBillingInvoices,
     getBillingInvoiceDetails,
+    getBillingPayments,
     getBillingPricing,
-    getBillingAdjustments,
-    createBillingAdjustment,
     createRazorpayOrder,
     verifyRazorpayPayment
 } from '../lib/api'
@@ -33,8 +32,19 @@ function loadRazorpaySdk() {
     })
 }
 
-function formatUsd(value) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0))
+function formatInr(value) {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value || 0))
+}
+
+function formatMetricLabel(metricType) {
+    const labels = {
+        BUILD_MINUTES: 'Build Minutes',
+        EGRESS_MB: 'Egress (MB)',
+        DEPLOYMENT_COUNT: 'Deployments (per project)',
+        PROJECT_COUNT: 'Projects'
+    }
+
+    return labels[metricType] || metricType
 }
 
 function formatEgress(egressMb) {
@@ -63,16 +73,12 @@ function BillingPage() {
     const [timeseries, setTimeseries] = useState([])
     const [projectRows, setProjectRows] = useState([])
     const [invoices, setInvoices] = useState([])
+    const [payments, setPayments] = useState([])
     const [pricing, setPricing] = useState([])
-    const [adjustments, setAdjustments] = useState([])
-    const [adjustmentBlocked, setAdjustmentBlocked] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState(null)
     const [selectedInvoiceDetails, setSelectedInvoiceDetails] = useState(null)
-    const [adjustmentForm, setAdjustmentForm] = useState({
-        metricType: 'BUILD_MINUTES',
-        amountUsd: '',
-        reason: ''
-    })
+    const [showAllProjects, setShowAllProjects] = useState(false)
+    const [showAllInvoices, setShowAllInvoices] = useState(false)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
 
@@ -81,9 +87,9 @@ function BillingPage() {
             const key = new Date(row.bucketDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             const existing = acc.find((x) => x.date === key)
             if (existing) {
-                existing.cost += Number(row.costUsd)
+                existing.costInr += Number(row.costInr)
             } else {
-                acc.push({ date: key, cost: Number(row.costUsd) })
+                acc.push({ date: key, costInr: Number(row.costInr) })
             }
             return acc
         }, [])
@@ -94,30 +100,22 @@ function BillingPage() {
             setLoading(true)
             setError('')
 
-            const [summaryRes, timeseriesRes, projectsRes, invoicesRes] = await Promise.all([
+            const [summaryRes, timeseriesRes, projectsRes, invoicesRes, paymentsRes] = await Promise.all([
                 getBillingSummary(),
                 getBillingTimeseries(30),
                 getBillingProjectUsage(),
-                getBillingInvoices()
+                getBillingInvoices(),
+                getBillingPayments()
             ])
 
-            const [pricingRes, adjustmentsRes] = await Promise.all([
-                getBillingPricing(),
-                getBillingAdjustments()
-            ])
+            const pricingRes = await getBillingPricing()
 
             if (summaryRes.status === 'success') setSummary(summaryRes.data)
             if (timeseriesRes.status === 'success') setTimeseries(timeseriesRes.data.rows)
             if (projectsRes.status === 'success') setProjectRows(projectsRes.data.rows)
             if (invoicesRes.status === 'success') setInvoices(invoicesRes.data.invoices)
+            if (paymentsRes.status === 'success') setPayments(paymentsRes.data.payments)
             if (pricingRes.status === 'success') setPricing(pricingRes.data.pricing)
-
-            if (adjustmentsRes.status === 'success') {
-                setAdjustments(adjustmentsRes.data.adjustments)
-                setAdjustmentBlocked(false)
-            } else if (adjustmentsRes?.message?.toLowerCase?.().includes('permissions') || adjustmentsRes?.statusCode === 403) {
-                setAdjustmentBlocked(true)
-            }
         } catch (err) {
             console.error(err)
             setError('Failed to load billing data.')
@@ -219,41 +217,47 @@ function BillingPage() {
         }
     }
 
-    const submitAdjustment = async (event) => {
-        event.preventDefault()
-        const payload = {
-            metricType: adjustmentForm.metricType,
-            amountUsd: Number(adjustmentForm.amountUsd),
-            reason: adjustmentForm.reason
-        }
-
-        const response = await createBillingAdjustment(payload)
-        if (response?.status === 'success') {
-            setAdjustmentForm({ metricType: 'BUILD_MINUTES', amountUsd: '', reason: '' })
-            await loadData()
-        } else {
-            setError(response?.message || 'Failed to create adjustment')
-        }
-    }
-
     if (loading) {
-        return <div className="billing-shell"><p>Loading billing dashboard...</p></div>
+        return (
+            <div className="dashboard-modern-container billing-page">
+                <div className="dashboard-content">
+                    <p>Loading billing dashboard...</p>
+                </div>
+            </div>
+        )
     }
 
     if (error) {
-        return <div className="billing-shell"><p className="billing-error">{error}</p></div>
+        return (
+            <div className="dashboard-modern-container billing-page">
+                <div className="dashboard-content">
+                    <p className="billing-error">{error}</p>
+                </div>
+            </div>
+        )
     }
 
     const alerts = summary?.alerts || []
+    const budgetLimitInr = Number(summary?.account?.budgetHardLimitInr || 0)
+    const usedAmountInr = Number(summary?.costs?.subtotalInr || 0)
+    const netSubtotalInr = Number(summary?.costs?.netSubtotalInr || usedAmountInr)
+    const balanceAppliedInr = Number(summary?.costs?.balanceAppliedInr || 0)
+    const balanceRemainingInr = Number(summary?.costs?.balanceRemainingInr || 0)
+    const visibleProjects = showAllProjects ? projectRows : projectRows.slice(0, 5)
+    const visibleInvoices = showAllInvoices ? invoices : invoices.slice(0, 5)
 
     return (
-        <div className="billing-shell">
+        <div className="dashboard-modern-container billing-page">
+            <div className="dashboard-content">
             <section className="billing-header">
                 <div>
                     <h1>Billing</h1>
                     <p>Track usage, forecast spend, and manage invoices.</p>
                 </div>
-                <button onClick={handleUpgrade} className="billing-upgrade-btn">Manage Billing</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => window.appState.setPage('monthly-invoices')} className="billing-upgrade-btn">Monthly Invoices</button>
+                    <button onClick={handleUpgrade} className="billing-upgrade-btn">Manage Billing</button>
+                </div>
             </section>
 
             <section className="billing-grid">
@@ -269,8 +273,25 @@ function BillingPage() {
                 />
                 <MetricCard
                     title="Current estimated cost"
-                    value={formatUsd(summary?.costs?.subtotalUsd || 0)}
-                    subtitle={`Forecast ${formatUsd(summary?.costs?.estimatedMonthEndUsd || 0)} this cycle`}
+                    value={formatInr(summary?.costs?.estimatedMonthEndInr || 0)}
+                    subtitle={`Spent ${formatInr(summary?.costs?.subtotalInr || 0)} so far`}
+                />
+                <MetricCard
+                    title="Amount due after balance"
+                    value={formatInr(netSubtotalInr || 0)}
+                    subtitle={balanceAppliedInr > 0
+                        ? `Balance applied ${formatInr(balanceAppliedInr)} · Remaining ${formatInr(balanceRemainingInr)}`
+                        : 'Add balance to unlock more usage'}
+                />
+                <MetricCard
+                    title="Month-to-date deployments"
+                    value={Math.round(summary?.usage?.deployments || 0)}
+                    subtitle={`Deployment charge ${formatInr(summary?.costs?.deploymentInr || 0)}`}
+                />
+                <MetricCard
+                    title="Active projects in billing"
+                    value={Math.round(summary?.usage?.projects || 0)}
+                    subtitle={`Project charge ${formatInr(summary?.costs?.projectsInr || 0)}`}
                 />
             </section>
 
@@ -286,14 +307,14 @@ function BillingPage() {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d4e6df" />
                         <XAxis dataKey="date" />
-                        <YAxis tickFormatter={(v) => `$${v}`} />
-                        <Tooltip formatter={(v) => formatUsd(v)} />
-                        <Area dataKey="cost" stroke="#00795b" fill="url(#billCost)" strokeWidth={2} />
+                        <YAxis tickFormatter={(v) => `Rs. ${Number(v).toFixed(0)}`} />
+                        <Tooltip formatter={(v) => formatInr(v)} />
+                        <Area dataKey="costInr" stroke="#00795b" fill="url(#billCost)" strokeWidth={2} />
                     </AreaChart>
                 </ResponsiveContainer>
             </section>
 
-            <section className="billing-table-card">
+            {/* <section className="billing-table-card">
                 <h2>Pricing Catalog</h2>
                 <table>
                     <thead>
@@ -309,14 +330,14 @@ function BillingPage() {
                         )}
                         {pricing.map((row) => (
                             <tr key={row.metricType}>
-                                <td>{row.metricType}</td>
+                                <td>{formatMetricLabel(row.metricType)}</td>
                                 <td>{Number(row.includedUnits).toFixed(2)}</td>
-                                <td>{formatUsd(row.unitPriceUsd)}</td>
+                                <td>{formatInr(row.unitPriceInr)}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            </section>
+            </section> */}
 
             <section className="billing-panels">
                 <div className="billing-table-card">
@@ -325,25 +346,37 @@ function BillingPage() {
                         <thead>
                             <tr>
                                 <th>Project</th>
+                                <th>Deployments</th>
+                                <th>Projects</th>
                                 <th>Build Minutes</th>
                                 <th>Egress (GB)</th>
-                                <th>Cost</th>
+                                <th>Usage Cost</th>
                             </tr>
                         </thead>
                         <tbody>
                             {projectRows.length === 0 && (
-                                <tr><td colSpan="4">No usage yet this cycle.</td></tr>
+                                <tr><td colSpan="6">No usage yet this cycle.</td></tr>
                             )}
-                            {projectRows.map((row) => (
+                            {visibleProjects.map((row) => (
                                 <tr key={row.projectId || row.projectName}>
                                     <td>{row.projectName}</td>
+                                    <td>{Math.round(row.deploymentCount || 0)}</td>
+                                    <td>{Math.round(row.projectCount || 0)}</td>
                                     <td>{Math.round(row.buildMinutes)}</td>
                                     <td>{(row.egressMb / 1024).toFixed(2)}</td>
-                                    <td>{formatUsd(row.costUsd)}</td>
+                                    <td>{formatInr(row.costInr)}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                    {projectRows.length > 5 && (
+                        <button
+                            className="billing-show-more"
+                            onClick={() => setShowAllProjects((prev) => !prev)}
+                        >
+                            {showAllProjects ? 'Show fewer projects' : `Show all ${projectRows.length} projects`}
+                        </button>
+                    )}
                 </div>
 
                 <div className="billing-table-card">
@@ -360,17 +393,25 @@ function BillingPage() {
                             {invoices.length === 0 && (
                                 <tr><td colSpan="3">No invoices generated yet.</td></tr>
                             )}
-                            {invoices.map((invoice) => (
+                            {visibleInvoices.map((invoice) => (
                                 <tr key={invoice.id} className="invoice-row-clickable" onClick={() => openInvoiceDetails(invoice.id)}>
                                     <td>
                                         {new Date(invoice.periodStart).toLocaleDateString()} - {new Date(invoice.periodEnd).toLocaleDateString()}
                                     </td>
                                     <td>{invoice.status}</td>
-                                    <td>{formatUsd(invoice.totalUsd)}</td>
+                                    <td>{formatInr(invoice.totalInr)}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                    {invoices.length > 5 && (
+                        <button
+                            className="billing-show-more"
+                            onClick={() => setShowAllInvoices((prev) => !prev)}
+                        >
+                            {showAllInvoices ? 'Show fewer invoices' : `Show all ${invoices.length} invoices`}
+                        </button>
+                    )}
                 </div>
             </section>
 
@@ -395,7 +436,7 @@ function BillingPage() {
                                         <tr key={item.id}>
                                             <td>{item.description}</td>
                                             <td>{Number(item.quantity).toFixed(2)}</td>
-                                            <td>{formatUsd(item.amountUsd)}</td>
+                                            <td>{formatInr(item.amountInr)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -405,61 +446,38 @@ function BillingPage() {
                 </div>
 
                 <div className="billing-table-card">
-                    <h2>Manual Adjustments</h2>
-                    {adjustmentBlocked ? (
-                        <p>Only OWNER/ADMIN can view and create billing adjustments.</p>
-                    ) : (
-                        <>
-                            <form className="adjustment-form" onSubmit={submitAdjustment}>
-                                <select
-                                    value={adjustmentForm.metricType}
-                                    onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, metricType: e.target.value }))}
-                                >
-                                    <option value="BUILD_MINUTES">BUILD_MINUTES</option>
-                                    <option value="EGRESS_MB">EGRESS_MB</option>
-                                </select>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Amount (USD)"
-                                    value={adjustmentForm.amountUsd}
-                                    onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, amountUsd: e.target.value }))}
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Reason"
-                                    value={adjustmentForm.reason}
-                                    onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, reason: e.target.value }))}
-                                    required
-                                />
-                                <button type="submit" className="billing-upgrade-btn">Add Adjustment</button>
-                            </form>
-
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Metric</th>
-                                        <th>Reason</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {adjustments.length === 0 && (
-                                        <tr><td colSpan="3">No adjustments yet.</td></tr>
-                                    )}
-                                    {adjustments.map((item) => (
-                                        <tr key={item.id}>
-                                            <td>{item.metricType || 'N/A'}</td>
-                                            <td>{item.reason}</td>
-                                            <td>{formatUsd(item.amountUsd)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </>
-                    )}
+                    <h2>Payment Status</h2>
+                    <p>Manage your billing balance to unlock additional projects and usage beyond the included free credits.</p>
+                    <p><strong>Available balance:</strong> {formatInr(Number(summary?.account?.balanceInr || 0))}</p>
+                    <button onClick={handleUpgrade} className="billing-upgrade-btn">Add Balance</button>
                 </div>
+            </section>
+
+            <section className="billing-table-card">
+                <h2>Recent Payments</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {payments.length === 0 && (
+                            <tr><td colSpan="4">No payments recorded yet.</td></tr>
+                        )}
+                        {payments.map((payment) => (
+                            <tr key={payment.id}>
+                                <td>{new Date(payment.createdAt).toLocaleDateString()}</td>
+                                <td>{payment.status}</td>
+                                <td>{formatInr(payment.amountInr || 0)}</td>
+                                <td>{payment.invoice?.id || '—'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </section>
 
             <section className="billing-alerts">
@@ -472,6 +490,7 @@ function BillingPage() {
                     </div>
                 ))}
             </section>
+            </div>
         </div>
     )
 }

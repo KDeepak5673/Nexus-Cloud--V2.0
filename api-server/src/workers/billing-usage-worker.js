@@ -112,9 +112,9 @@ async function processUsageEvent(event) {
         return
     }
 
-    const { unitPriceUsd } = await getEffectivePrice(data.accountId, data.metricType, occurredAt)
+    const { unitPriceInr } = await getEffectivePrice(data.accountId, data.metricType, occurredAt)
     const quantity = Number(data.quantity)
-    const costUsd = quantity * unitPriceUsd
+    const costInr = quantity * unitPriceInr
 
     await prisma.$transaction(async (tx) => {
         await tx.usageEventRaw.create({
@@ -152,13 +152,13 @@ async function processUsageEvent(event) {
                 metricType: data.metricType,
                 bucketStart: startOfHour(occurredAt),
                 quantity,
-                unitCostUsd: unitPriceUsd,
-                costUsd
+                unitCostInr: unitPriceInr,
+                costInr
             },
             {
                 quantity: { increment: quantity },
-                costUsd: { increment: costUsd },
-                unitCostUsd: unitPriceUsd
+                costInr: { increment: costInr },
+                unitCostInr: unitPriceInr
             }
         )
 
@@ -180,13 +180,13 @@ async function processUsageEvent(event) {
                 metricType: data.metricType,
                 bucketDate: startOfDay(occurredAt),
                 quantity,
-                unitCostUsd: unitPriceUsd,
-                costUsd
+                unitCostInr: unitPriceInr,
+                costInr
             },
             {
                 quantity: { increment: quantity },
-                costUsd: { increment: costUsd },
-                unitCostUsd: unitPriceUsd
+                costInr: { increment: costInr },
+                unitCostInr: unitPriceInr
             }
         )
 
@@ -208,13 +208,13 @@ async function processUsageEvent(event) {
                 metricType: data.metricType,
                 monthStart: startOfMonth(occurredAt),
                 quantity,
-                unitCostUsd: unitPriceUsd,
-                costUsd
+                unitCostInr: unitPriceInr,
+                costInr
             },
             {
                 quantity: { increment: quantity },
-                costUsd: { increment: costUsd },
-                unitCostUsd: unitPriceUsd
+                costInr: { increment: costInr },
+                unitCostInr: unitPriceInr
             }
         )
     })

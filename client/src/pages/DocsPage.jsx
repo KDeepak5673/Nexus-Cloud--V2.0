@@ -554,50 +554,53 @@ function DocsPage() {
           {/* Billing & Pricing */}
           <section id="billing-pricing" className="docs-section">
             <h2>💳 Billing & Pricing</h2>
-            <p>Nexus Cloud uses a <strong>subscription-based pricing model</strong> designed for developers, freelancers, and teams. Each plan provides a fixed set of platform resources including build minutes, storage, bandwidth, and project limits.</p>
-            <p>Users can monitor usage, track costs, and manage their subscription through the <strong>Billing Dashboard</strong>. There are <strong>no setup fees</strong>, and users can upgrade plans anytime.</p>
+            <p>Nexus Cloud uses a <strong>usage-based pricing model</strong> with included monthly credits. You get a free allowance for projects, deployments, build minutes, and egress, then pay only for what you use beyond the free tier.</p>
+            <p>Users can monitor usage, track costs, and manage payments through the <strong>Billing Dashboard</strong>. There are <strong>no setup fees</strong>, and you can add balance anytime.</p>
 
-            <h3>Pricing Plans</h3>
+            <h3>Usage Rules</h3>
+            <ul>
+              <li><strong>5 projects</strong> are included for free each month</li>
+              <li><strong>10 deployments per project</strong> are included each month</li>
+              <li><strong>Build minutes and egress credits</strong> are included each month before charges begin</li>
+              <li>When the free project limit is reached, you must add balance to create more projects</li>
+              <li>If build minutes or egress exceed the monthly limit, access to Dashboard and Profile is paused until payment clears</li>
+            </ul>
 
-            <div className="pricing-table">
-              <div className="pricing-item">
-                <h4>🚀 Starter (Free)</h4>
-                <p className="plan-price"><strong>$0 / month</strong></p>
-                <p className="plan-desc">Best suited for students, personal projects, and experimentation.</p>
-                <p><strong>Includes:</strong></p>
-                <ul>
-                  <li>Deploy up to <strong>5 projects</strong></li>
-                  <li><strong>500 build minutes</strong> per month</li>
-                  <li><strong>1 GB storage</strong></li>
-                  <li><strong>5 GB bandwidth</strong> per month</li>
-                </ul>
-              </div>
-
-              <div className="pricing-item">
-                <h4>💼 Pro</h4>
-                <p className="plan-price"><strong>$19 / month</strong></p>
-                <p className="plan-desc">Ideal for developers and freelancers building multiple projects.</p>
-                <p><strong>Includes:</strong></p>
-                <ul>
-                  <li>Deploy up to <strong>50 projects</strong></li>
-                  <li><strong>5,000 build minutes</strong> per month</li>
-                  <li><strong>20 GB storage</strong></li>
-                  <li><strong>100 GB bandwidth</strong> per month</li>
-                </ul>
-              </div>
-
-              <div className="pricing-item">
-                <h4>👥 Team</h4>
-                <p className="plan-price"><strong>$49 / month</strong></p>
-                <p className="plan-desc">Designed for startups and collaborative teams.</p>
-                <p><strong>Includes:</strong></p>
-                <ul>
-                  <li>Deploy up to <strong>200 projects</strong></li>
-                  <li><strong>20,000 build minutes</strong> per month</li>
-                  <li><strong>100 GB storage</strong></li>
-                  <li><strong>500 GB bandwidth</strong> per month</li>
-                </ul>
-              </div>
+            <h3>Pricing Catalog</h3>
+            <p>All prices are defined and billed in INR. Included units reset each month.</p>
+            <div className="docs-pricing-table">
+              <table>
+                <caption>Pricing catalog and included usage</caption>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Included Usage</th>
+                    <th>Unit Price After Free</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Build Minutes</td>
+                    <td>300 minutes</td>
+                    <td>Rs. 0.2075 per minute</td>
+                  </tr>
+                  <tr>
+                    <td>Egress (MB)</td>
+                    <td>1024 MB</td>
+                    <td>Rs. 0.0083 per MB</td>
+                  </tr>
+                  <tr>
+                    <td>Deployments</td>
+                    <td>10 per project</td>
+                    <td>Rs. 8.30 per deployment</td>
+                  </tr>
+                  <tr>
+                    <td>Projects</td>
+                    <td>5 projects</td>
+                    <td>Rs. 166.00 per project</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <h3>Billing Dashboard</h3>
@@ -658,15 +661,6 @@ function DocsPage() {
             </ul>
             <p>This section provides full transparency into how charges are calculated.</p>
 
-            <h4>Manual Adjustments</h4>
-            <p><strong>Admin-only feature:</strong> Allows administrators to apply billing adjustments including:</p>
-            <ul>
-              <li>Credits and discounts</li>
-              <li>Corrections to charges</li>
-              <li>Additional charges</li>
-            </ul>
-            <p>Each adjustment requires a metric selection, amount, and reason for documentation and audit purposes.</p>
-
             <h4>Usage Alerts</h4>
             <p>Displays important notifications related to billing, usage, or subscription changes. Examples include:</p>
             <ul>
@@ -678,14 +672,14 @@ function DocsPage() {
             <p>If no alerts exist, the dashboard displays:</p>
             <div className="code-block"><code>No alerts</code></div>
 
-            <h3>Managing Your Subscription</h3>
+            <h3>Managing Your Billing</h3>
             <p>Click the <strong>Manage Billing</strong> button in the Billing Dashboard to:</p>
             <ul>
-              <li>Upgrade or change plans</li>
+              <li>Add balance to unlock additional projects and usage</li>
               <li>Update payment methods</li>
               <li>Review billing settings</li>
             </ul>
-            <p>Plan upgrades take effect immediately according to platform billing policies. Downgrades apply at the end of the current billing cycle.</p>
+            <p>Payments apply immediately to unblock access and resume project creation.</p>
 
             <h3>Best Practices for Managing Costs</h3>
             <p>To optimize usage and control costs:</p>

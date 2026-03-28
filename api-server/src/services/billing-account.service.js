@@ -13,6 +13,7 @@ async function ensureBillingAccountForUser(user) {
     const billingAccount = await prisma.billingAccount.create({
         data: {
             name: user.displayName ? `${user.displayName} Workspace` : `${user.email || 'Nexus'} Workspace`,
+            currency: 'INR',
             createdByUserId: user.id,
             members: {
                 create: {
@@ -25,14 +26,26 @@ async function ensureBillingAccountForUser(user) {
                     data: [
                         {
                             metricType: 'BUILD_MINUTES',
-                            unitPriceUsd: 0.002500,
+                            unitPriceInr: 0.2075,
                             includedUnits: 300,
                             isDefault: true
                         },
                         {
                             metricType: 'EGRESS_MB',
-                            unitPriceUsd: 0.000100,
-                            includedUnits: 10240,
+                            unitPriceInr: 0.0083,
+                            includedUnits: 1024,
+                            isDefault: true
+                        },
+                        {
+                            metricType: 'DEPLOYMENT_COUNT',
+                            unitPriceInr: 8.3,
+                            includedUnits: 10,
+                            isDefault: true
+                        },
+                        {
+                            metricType: 'PROJECT_COUNT',
+                            unitPriceInr: 166.0,
+                            includedUnits: 5,
                             isDefault: true
                         }
                     ]
@@ -50,7 +63,7 @@ async function ensureBillingAccountForUser(user) {
                         },
                         {
                             metricType: 'EGRESS_MB',
-                            monthlyIncluded: 10240,
+                            monthlyIncluded: 1024,
                             softLimitPercent: 80,
                             hardLimitPercent: 100,
                             enforcement: 'SOFT'

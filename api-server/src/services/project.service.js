@@ -1,6 +1,8 @@
 const prisma = require('../config/database')
 const { generateSlug } = require('random-word-slugs')
 const { getPrimaryBillingAccountForUser } = require('./billing-account.service')
+const { getBillingSummaryForUser } = require('./billing.service')
+const { getEffectivePrice } = require('./billing-pricing.service')
 const { deleteDeploymentFromS3 } = require('../utils/s3')
 
 const DEPLOYMENT_BASE_DOMAIN = (process.env.DEPLOYMENT_BASE_DOMAIN || 'nexus-cloud.tech').trim()
@@ -151,6 +153,7 @@ async function validateGitHubRepository(gitURL) {
 
 
 async function createProject(name, gitURL, userId, config = {}) {
+    await assertProjectCreationAllowed(userId)
     // Validate GitHub repository first
     await validateGitHubRepository(gitURL)
     const billingAccount = await getPrimaryBillingAccountForUser(userId)
@@ -180,6 +183,41 @@ async function createProject(name, gitURL, userId, config = {}) {
     return project
 }
 
+
+async function assertProjectCreationAllowed(userId) {
+    const summary = await getBillingSummaryForUser(userId)
+    const hardLimitExceeded = (summary.alerts || []).some((alert) =>
+        (alert.metricType === 'BUILD_MINUTES' || alert.metricType === 'EGRESS_MB')
+        && alert.level === 'hard'
+    )
+
+    if (hardLimitExceeded) {
+        const error = new Error('Usage limits exceeded. Please clear payment before creating new projects.')
+        error.statusCode = 402
+        throw error
+    }
+
+    const pricing = await getEffectivePrice(summary.account.id, 'PROJECT_COUNT', new Date())
+    const includedProjects = Number(pricing.includedUnits || 0)
+    const currentProjects = Number(summary.usage?.projects || 0)
+
+    if (includedProjects > 0 && currentProjects >= includedProjects) {
+        const budgetLimit = Number(summary.account?.budgetHardLimitInr || 0)
+        const usedAmount = Number(summary.costs?.subtotalInr || 0)
+        const balanceRemaining = Number(summary.costs?.balanceRemainingInr || 0)
+        const remainingBalance = Number.isFinite(balanceRemaining)
+            ? balanceRemaining
+            : Number.isFinite(budgetLimit)
+                ? budgetLimit - usedAmount
+                : 0
+
+        if (!Number.isFinite(remainingBalance) || remainingBalance <= 0) {
+            const error = new Error('Project limit reached. Add balance to create more projects.')
+            error.statusCode = 402
+            throw error
+        }
+    }
+}
 
 async function getUserProjects(userId) {
     return await prisma.project.findMany({

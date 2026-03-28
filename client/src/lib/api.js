@@ -145,6 +145,10 @@ export async function getBillingInvoiceDetails(invoiceId) {
     return request(`/api/billing/invoices/${invoiceId}`)
 }
 
+export async function getBillingPayments() {
+    return request('/api/billing/payments')
+}
+
 export async function getBillingPricing() {
     return request('/api/billing/pricing')
 }
@@ -236,6 +240,7 @@ export default {
     getBillingProjectUsage,
     getBillingInvoices,
     getBillingInvoiceDetails,
+    getBillingPayments,
     getBillingPricing,
     createRazorpayOrder,
     verifyRazorpayPayment,
